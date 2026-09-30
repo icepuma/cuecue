@@ -9,3 +9,10 @@ publish.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+libtest-mimic = "0.8.2"
+
+[[test]]
+name = "corpus"
+harness = false
