@@ -23,6 +23,11 @@ impl Parse {
     pub fn syntax(&self) -> SyntaxNode {
         SyntaxNode::new_root(self.green.clone())
     }
+
+    pub fn tree(&self) -> crate::ast::SourceFile {
+        use crate::ast::AstNode;
+        crate::ast::SourceFile::cast(self.syntax()).expect("root is a SourceFile")
+    }
 }
 
 pub fn parse(src: &str) -> Parse {

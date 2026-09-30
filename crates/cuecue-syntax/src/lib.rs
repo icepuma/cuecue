@@ -1,5 +1,6 @@
 //! Lexer, parser and lossless syntax tree for cuecue source files (see docs/ARCHITECTURE.md).
 
+pub mod ast;
 mod kind;
 mod lexer;
 mod parser;

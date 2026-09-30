@@ -27,7 +27,8 @@ Depends on: M0.
   - Fuzz with `cd fuzz && cargo +nightly fuzz run lex -- -max_total_time=300` (needs `cargo install cargo-fuzz`); seed `fuzz/corpus/lex` from the corpus `.cue` sections. Like CUE's scanner, a bare `#` or `_#` is an identifier.
 - [x] **M1.2 Parser.** Hand-written recursive descent that builds a `rowan` tree and recovers from errors. *Done when* every corpus file parses without diagnostics (except the oracle's `syntax` cases, which get at least one `syntax` diagnostic), `cuecue parse --tree <file>` prints the tree, and the `parse` fuzz target runs 5 minutes clean.
   - The oracle's `syntax` cases other than `compile/labels` are compile-time checks (unused `let`, `_` as a label); they belong to lowering (M2.3), not the parser. A newline acts as a virtual `Comma` token, as in CUE's scanner. Nesting beyond 200 levels is reported, not recursed.
-- [ ] **M1.3 Typed AST.** Typed accessors for every production of the CUE spec grammar. *Done when* printing the tree of any corpus file reproduces the file byte for byte.
+- [x] **M1.3 Typed AST.** Typed accessors for every production of the CUE spec grammar. *Done when* printing the tree of any corpus file reproduces the file byte for byte.
+  - `cuecue_syntax::ast` (`parse(src).tree()`). The corpus test also walks every tree through the typed API alone and requires it to reach every node.
 
 ## M2 Evaluator, edition v1
 

@@ -1,7 +1,11 @@
 //! Every `.cue` file in the v1 corpus lexes and parses losslessly, and without errors unless
 //! the oracle reports a syntax error for its archive (ROADMAP M1.1, M1.2).
 
+use std::collections::BTreeSet;
 use std::fs;
+
+use cuecue_syntax::ast::*;
+use cuecue_syntax::{SyntaxKind, SyntaxNode};
 use std::path::{Path, PathBuf};
 
 fn archives(dir: &Path, out: &mut Vec<PathBuf>) {
@@ -145,4 +149,177 @@ fn corpus_lexes() {
         failures.len(),
         failures.join("\n")
     );
+}
+
+/// Records a node reached through the typed API.
+type Seen = BTreeSet<(u32, u32, SyntaxKind)>;
+
+fn see(seen: &mut Seen, node: &SyntaxNode) {
+    let r = node.text_range();
+    seen.insert((r.start().into(), r.end().into(), node.kind()));
+}
+
+fn visit_decl(seen: &mut Seen, decl: Decl) {
+    match decl {
+        Decl::Field(f) => visit_field(seen, f),
+        Decl::Embedding(e) => visit_expr(seen, e),
+        Decl::Comprehension(c) => visit_comprehension(seen, c),
+        Decl::Let(l) => visit_let(seen, l),
+        Decl::Ellipsis(e) => visit_ellipsis(seen, e),
+        Decl::Attribute(_) => {}
+    }
+}
+
+fn visit_field(seen: &mut Seen, field: Field) {
+    see(seen, field.syntax());
+    let label = field.label().unwrap();
+    see(seen, label.syntax());
+    let _ = (label.alias(), label.marker());
+    match label.name().unwrap() {
+        LabelName::Static(_) => {}
+        LabelName::Interpolation(i) => visit_expr(seen, Expr::Interpolation(i)),
+        LabelName::Dynamic(e) | LabelName::Pattern(e) => visit_expr(seen, e),
+    }
+    match field.value().unwrap() {
+        FieldValue::Field(f) => visit_field(seen, f),
+        FieldValue::Expr(e) => visit_expr(seen, e),
+    }
+}
+
+fn visit_let(seen: &mut Seen, l: LetClause) {
+    see(seen, l.syntax());
+    l.name().unwrap();
+    visit_expr(seen, l.value().unwrap());
+}
+
+fn visit_ellipsis(seen: &mut Seen, e: EllipsisExpr) {
+    see(seen, e.syntax());
+    if let Some(t) = e.expr() {
+        visit_expr(seen, t);
+    }
+}
+
+fn visit_comprehension(seen: &mut Seen, c: Comprehension) {
+    see(seen, c.syntax());
+    for clause in c.clauses() {
+        match clause {
+            Clause::For(f) => {
+                see(seen, f.syntax());
+                f.value().unwrap();
+                let _ = f.key();
+                visit_expr(seen, f.source().unwrap());
+            }
+            Clause::If(i) => {
+                see(seen, i.syntax());
+                visit_expr(seen, i.condition().unwrap());
+            }
+            Clause::Let(l) => visit_let(seen, l),
+        }
+    }
+    visit_expr(seen, Expr::Struct(c.body().unwrap()));
+}
+
+fn visit_expr(seen: &mut Seen, expr: Expr) {
+    see(seen, expr.syntax());
+    let mut sub = |e: Option<Expr>| visit_expr(seen, e.expect("sub-expression"));
+    match expr {
+        Expr::Literal(l) => drop(l.token().unwrap()),
+        Expr::Name(n) => drop(n.token().unwrap()),
+        Expr::Interpolation(i) => {
+            assert!(i.pieces().count() >= 2);
+            for e in i.exprs() {
+                sub(Some(e));
+            }
+        }
+        Expr::Paren(p) => sub(p.expr()),
+        Expr::Unary(u) => {
+            u.op().unwrap();
+            sub(u.operand());
+        }
+        Expr::Binary(b) => {
+            b.op().unwrap();
+            sub(b.lhs());
+            sub(b.rhs());
+        }
+        Expr::Selector(s) => {
+            s.name().unwrap();
+            sub(s.operand());
+        }
+        Expr::Index(i) => {
+            sub(i.operand());
+            sub(i.index());
+        }
+        Expr::Slice(s) => {
+            let (lo, hi) = s.bounds();
+            sub(s.operand());
+            for bound in [lo, hi].into_iter().flatten() {
+                sub(Some(bound));
+            }
+        }
+        Expr::Call(c) => {
+            sub(c.callee());
+            for a in c.args() {
+                sub(Some(a));
+            }
+        }
+        Expr::Struct(s) => {
+            for d in s.decls() {
+                visit_decl(seen, d);
+            }
+        }
+        Expr::List(l) => {
+            for element in l.elements() {
+                match element {
+                    Element::Expr(e) => visit_expr(seen, e),
+                    Element::Comprehension(c) => visit_comprehension(seen, c),
+                    Element::Ellipsis(e) => visit_ellipsis(seen, e),
+                }
+            }
+        }
+        Expr::Alias(a) => {
+            a.name().unwrap();
+            sub(a.expr());
+        }
+    }
+}
+
+/// The typed API reaches every node of every corpus tree (ROADMAP M1.3).
+#[test]
+fn typed_ast_covers_the_corpus() {
+    let mut checked = 0;
+    for case in cases().into_iter().filter(|c| !c.syntax_error) {
+        for (name, src) in &case.files {
+            let parse = cuecue_syntax::parse(src);
+            let tree = parse.tree();
+            let mut seen = Seen::new();
+            if let Some(p) = tree.package() {
+                see(&mut seen, p.syntax());
+                p.name().unwrap();
+            }
+            for import in tree.imports() {
+                see(&mut seen, import.syntax());
+                for spec in import.specs() {
+                    see(&mut seen, spec.syntax());
+                    spec.path().unwrap();
+                }
+            }
+            for decl in tree.decls() {
+                visit_decl(&mut seen, decl);
+            }
+            let mut all = Seen::new();
+            for node in tree.syntax().descendants() {
+                if !matches!(node.kind(), SyntaxKind::SourceFile | SyntaxKind::ArgList) {
+                    see(&mut all, &node);
+                }
+            }
+            let missed: Vec<_> = all.difference(&seen).collect();
+            assert!(
+                missed.is_empty(),
+                "{} {name}: unreached nodes {missed:?}",
+                case.archive
+            );
+            checked += 1;
+        }
+    }
+    assert!(checked > 400);
 }
