@@ -111,6 +111,12 @@ Settled choices first, open questions last. Add an entry when you make a choice 
 
 - cuecue is an independent project, not affiliated with the CUE project or CUE Labs.
 
+## D-018 Align 2027's `self` with CUE's `aliasv2` experiment
+
+**Proposed** (found during M0.4). CUE v0.17.1 has an `aliasv2` experiment that adds `self` with the meaning of SPEC §4.5, and also allows it inside list literals: `items: [1, 2, self[0]]` refers to the list (corpus `references/self.txtar`, skipped for v1 because it is an experiment). Proposal: change §4.5 to "the innermost enclosing struct or list literal", so 2027 matches upstream where both have `self`.
+
+- Why: if upstream stabilizes `self`, v1 and 2027 agree instead of diverging.
+
 ## Open questions
 
 These belong to the human. An agent that needs one answered writes a Proposed answer below it, tells the human, and moves to another task.
@@ -123,3 +129,4 @@ These belong to the human. An agent that needs one answered writes a Proposed an
 - **Q6 v1 tag injection.** Support `@tag`, `@if` and `-t` for v1 compatibility?
 - **Q7 Standard library names.** Keep v1's Go-style names (`strings.HasPrefix`) in 2027, or add a new naming style?
 - **Q8 `text/template`.** No maintained Rust crate implements Go templates (`gtmpl` was last released in 2021). Implement a subset, or leave the package out?
+- **Q9 Upstream experiments.** CUE v0.17.1 experiments overlap with 2027: `aliasv2` (`self`, D-018), `try`, `structcmp`, `explicitopen` and `testing`. When an experiment covers a 2027 feature, should 2027 adopt its syntax and meaning?
