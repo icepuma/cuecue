@@ -355,7 +355,7 @@ Every diagnostic has:
 | `reference` | unknown identifier, field, import, package or builtin; a list index out of range; duplicate declaration | `reference "…" not found`, `undefined …`, `… out of range`, `must be non-negative`, `import failed` |
 | `conflict` | values don't unify: mismatched values, types, bounds, validators, operands or list lengths; explicit `_\|_` | `conflicting values`, `invalid value`, `invalid operand`, `incompatible …`, `empty disjunction`, `cannot use … (type …)`, `explicit error` |
 | `closed` | a closed struct doesn't allow the field | `field not allowed` |
-| `required` | a required field is missing | `field is required but not present`, `required field missing` |
+| `required` | a required field is missing | `field is required but not present`, `required field missing`, `missing required field` |
 | `incomplete` | a value isn't concrete where it must be, or refers to an unset optional field. Reference cycles such as `a: b, b: a` land here too | `incomplete …`, `non-concrete …`, `… requires concrete value`, `unresolved disjunction`, `cannot reference optional field` |
 | `cycle` | a structural cycle, or a field set changed after it was referenced | `structural cycle`, `cyclic reference`, `circular dependency`, `field set was already referenced` |
 | `builtin` | a builtin or an arithmetic operation failed for a reason other than a conflict | `error in call to`, `failed arithmetic`, `invalid regexp`, `exceeds limit` |

@@ -1,7 +1,23 @@
-/// Token kinds (M1.1). Node kinds join them when the parser arrives (M1.2).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[repr(u16)]
-pub enum SyntaxKind {
+macro_rules! syntax_kinds {
+    ($($(#[$meta:meta])* $name:ident,)*) => {
+        /// Token and node kinds of the syntax tree.
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+        #[repr(u16)]
+        pub enum SyntaxKind {
+            $($(#[$meta])* $name,)*
+        }
+
+        impl SyntaxKind {
+            const ALL: &'static [SyntaxKind] = &[$(SyntaxKind::$name,)*];
+
+            pub fn from_raw(raw: u16) -> Option<SyntaxKind> {
+                Self::ALL.get(raw as usize).copied()
+            }
+        }
+    };
+}
+
+syntax_kinds! {
     // Trivia
     Whitespace,
     Newline,
@@ -68,6 +84,40 @@ pub enum SyntaxKind {
 
     /// A character sequence that forms no token; the lexer reports why.
     Error,
+
+    // Nodes
+    SourceFile,
+    PackageClause,
+    ImportDecl,
+    ImportSpec,
+    /// `label: value`; a shorthand `a: b: c` nests fields.
+    Field,
+    /// `X=name?`, `(expr)` or `[pattern]`, with an optional `?` or `!`.
+    Label,
+    /// `X=expr`
+    Alias,
+    /// `...` or `...T`
+    EllipsisExpr,
+    Comprehension,
+    ForClause,
+    IfClause,
+    LetClause,
+    StructLit,
+    ListLit,
+    /// A reference to a field, alias, let or package.
+    Name,
+    Literal,
+    Interpolation,
+    ParenExpr,
+    UnaryExpr,
+    BinaryExpr,
+    SelectorExpr,
+    IndexExpr,
+    SliceExpr,
+    CallExpr,
+    ArgList,
+    /// Tokens the parser couldn't place.
+    ErrorNode,
 }
 
 impl SyntaxKind {
@@ -125,3 +175,21 @@ impl SyntaxKind {
             ))
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum CueLanguage {}
+
+impl rowan::Language for CueLanguage {
+    type Kind = SyntaxKind;
+
+    fn kind_from_raw(raw: rowan::SyntaxKind) -> SyntaxKind {
+        SyntaxKind::from_raw(raw.0).expect("syntax kind out of range")
+    }
+
+    fn kind_to_raw(kind: SyntaxKind) -> rowan::SyntaxKind {
+        rowan::SyntaxKind(kind as u16)
+    }
+}
+
+pub type SyntaxNode = rowan::SyntaxNode<CueLanguage>;
+pub type SyntaxToken = rowan::SyntaxToken<CueLanguage>;

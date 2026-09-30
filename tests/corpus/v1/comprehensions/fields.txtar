@@ -88,4 +88,4 @@ issue560: {
 incomplete issue560.user.tags_map."{a}"
 incomplete issue560.user.tags_map."{c}"
 incomplete issue560.user.tags_map.b
-syntax missingRequiredError.y
+required missingRequiredError.y

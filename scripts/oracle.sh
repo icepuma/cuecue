@@ -31,7 +31,7 @@ normalize() {
         # Order matters: the first matching pattern wins.
         function kind(m) {
             if (m ~ /field not allowed/) return "closed"
-            if (m ~ /field is required but not present|required field missing/) return "required"
+            if (m ~ /field is required but not present|required field missing|missing required field/) return "required"
             if (m ~ /structural cycle|cyclic reference|circular dependency|field set was already referenced/) return "cycle"
             if (m ~ /incomplete|non-concrete|not concrete|non-ground|requires concrete value|unresolved disjunction|cannot reference optional field|invalid type _\)/) return "incomplete"
             if (m ~ /^(expected |missing |illegal |found packages |unreferenced alias or let|comprehension values not allowed|cannot use _ as )|not terminated/) return "syntax"

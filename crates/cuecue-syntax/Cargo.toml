@@ -9,3 +9,6 @@ publish.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+rowan = "0.17.0"

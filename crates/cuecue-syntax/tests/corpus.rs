@@ -1,5 +1,5 @@
-//! Every `.cue` file in the v1 corpus lexes losslessly, and without errors unless the oracle
-//! reports a syntax error for its archive (ROADMAP M1.1).
+//! Every `.cue` file in the v1 corpus lexes and parses losslessly, and without errors unless
+//! the oracle reports a syntax error for its archive (ROADMAP M1.1, M1.2).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -33,6 +33,58 @@ fn sections(text: &str) -> Vec<(&str, String)> {
         }
     }
     out
+}
+
+/// (archive path, oracle reports a syntax error, .cue files) for every archive not skipped.
+fn cases() -> Vec<(String, bool, Vec<(String, String)>)> {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/corpus/v1");
+    let mut paths = Vec::new();
+    archives(&dir, &mut paths);
+    assert!(paths.len() > 400, "corpus not found at {}", dir.display());
+    paths.sort();
+    let mut out = Vec::new();
+    for path in paths {
+        let text = fs::read_to_string(&path).unwrap();
+        let sections = sections(&text);
+        if sections.iter().any(|(name, _)| *name == "oracle/skip") {
+            continue;
+        }
+        let syntax_error = sections.iter().any(|(name, body)| {
+            *name == "oracle/error" && body.lines().any(|l| l.starts_with("syntax "))
+        });
+        let files = sections
+            .into_iter()
+            .filter(|(n, _)| n.ends_with(".cue"))
+            .map(|(n, body)| (n.to_owned(), body))
+            .collect();
+        let name = path.strip_prefix(&dir).unwrap().display().to_string();
+        out.push((name, syntax_error, files));
+    }
+    out
+}
+
+#[test]
+fn corpus_parses() {
+    let mut failures = Vec::new();
+    for (archive, syntax_error, files) in cases() {
+        for (name, src) in &files {
+            let parse = cuecue_syntax::parse(src);
+            assert_eq!(
+                parse.syntax().text().to_string(),
+                *src,
+                "{archive} {name}: not lossless"
+            );
+            if !syntax_error && !parse.errors.is_empty() {
+                failures.push(format!("{archive} {name}: {:?}", parse.errors));
+            }
+        }
+    }
+    assert!(
+        failures.is_empty(),
+        "{} files with parse errors:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
 }
 
 #[test]

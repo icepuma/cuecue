@@ -12,3 +12,4 @@ workspace = true
 
 [dependencies]
 clap = { version = "4.6.7", features = ["derive"] }
+cuecue-syntax = { version = "0.0.0", path = "../cuecue-syntax" }
