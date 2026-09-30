@@ -1,0 +1,15 @@
+
+TODO: Should #Bar result in string or #Foo | string?
+
+
+raw: true
+eval: true
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{
+	#Foo: {
+		#Bar: #Foo | string
+	}
+}
+-- oracle/export.json --
+{}

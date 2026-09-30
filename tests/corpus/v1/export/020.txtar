@@ -1,0 +1,9 @@
+raw: true
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{a: "", b: len(a)}
+-- oracle/export.json --
+{
+    "a": "",
+    "b": 0
+}

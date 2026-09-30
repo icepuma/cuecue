@@ -1,0 +1,7 @@
+raw: true
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{a: >=0 & <=10, b: "Count: \(a) times"}
+-- oracle/error --
+incomplete a
+incomplete b

@@ -1,0 +1,28 @@
+-- in.cue --
+package x
+
+#PDB: {y: int}
+
+result: resources: {
+    if true {
+        x: #PDB & {y: 1}
+    }
+}
+
+out: ({
+    cfg: resources: _
+    out: {for n, _ in cfg.resources {(n): "x"}}
+} & {cfg: result}).out @test(eq, {x: "x"})
+-- oracle/export.json --
+{
+    "result": {
+        "resources": {
+            "x": {
+                "y": 1
+            }
+        }
+    },
+    "out": {
+        "x": "x"
+    }
+}

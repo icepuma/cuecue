@@ -1,0 +1,10 @@
+-- in.cue --
+a: null         @test(eq, null)
+b: a.x | "b"    @test(eq, "b")
+c: a["x"] | "c" @test(eq, "c")
+-- oracle/export.json --
+{
+    "a": null,
+    "b": "b",
+    "c": "c"
+}

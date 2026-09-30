@@ -1,0 +1,9 @@
+-- in.cue --
+c: #R & {
+	w: [{}, {b: int}]
+} @test(eq, {w: [{}, {b: int}]})
+#R: {
+	w: [{}, ...]
+}
+-- oracle/error --
+incomplete c.w.1.b

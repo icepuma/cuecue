@@ -1,0 +1,16 @@
+-- in.cue --
+a: 1 != 2       @test(eq, true)
+b: 1 != null    @test(eq, true)
+c: true == null @test(eq, false)
+d: null != {}   @test(eq, true)
+e: null == []   @test(eq, false)
+f: 0 == 0.0     @test(eq, true) // types are unified first TODO: make this consistent
+-- oracle/export.json --
+{
+    "a": true,
+    "b": true,
+    "c": false,
+    "d": true,
+    "e": false,
+    "f": true
+}

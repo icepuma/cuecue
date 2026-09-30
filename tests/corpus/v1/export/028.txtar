@@ -1,0 +1,14 @@
+raw: true
+eval: true
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{
+	#FindInMap: {
+		#: "Fn::FindInMap": [string | #FindInMap]
+	}
+	a: [...string]
+}
+-- oracle/export.json --
+{
+    "a": []
+}

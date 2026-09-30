@@ -1,0 +1,22 @@
+# Tests that a label alias on a top-level field does not change the field's
+# visibility from other files in the same package. The label alias form
+# `A=foo: ...` should leave `foo` reachable from other files in package p.
+# https://cuelang.org/issue/4312
+-- one.cue --
+package p
+
+A=foo: "foo value"
+
+one_alias: A   @test(eq, "foo value")
+one_field: foo @test(eq, "foo value")
+-- two.cue --
+package p
+
+two_field: foo @test(eq, "foo value")
+-- oracle/export.json --
+{
+    "foo": "foo value",
+    "one_alias": "foo value",
+    "one_field": "foo value",
+    "two_field": "foo value"
+}

@@ -1,0 +1,48 @@
+-- in.cue --
+a: {
+	{{
+		b
+		c
+		d: b
+		e: c
+	}}
+	c: {}
+} @test(eq, {d: {}, e: {}, c: {}})
+b: {}    @test(eq, {})
+s: "foo" @test(eq, "foo")
+c: s     @test(eq, "foo")
+
+// s is technically in a new struct here so it will have a one higher count than
+// the one before.
+d: [s]: 3 @test(eq, {["foo"]: 3})
+
+e: {} @test(eq, {}, hint="not the worst if this is not allowed")
+
+e & {
+	e: {}
+}
+
+p: {
+	{X=["foo"]: b: X | null}
+	{[Y="bar"]: b: Y}
+
+	@test(eq, {
+		["foo"]: b: null @test(final)
+		["bar"]: b: string
+	}, incorrect)
+	@test(eq:todo, {
+		["foo"]: b: null @test(final)
+		["bar"]: b: "bar"
+	})
+}
+
+let B = {open: int}
+f: B @test(eq, {open: int})
+
+schema: {
+	next: _schema_1 @test(err, code=structural_cycle)
+}
+
+let _schema_1 = schema
+-- oracle/error --
+cycle schema.next

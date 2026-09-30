@@ -1,0 +1,10 @@
+-- in.cue --
+a: _|_ & _|_            @test(err, code=user)
+b: null & _|_           @test(err, code=user)
+c: b.a == _|_           @test(eq, true)
+d: _|_ != b.a           @test(eq, false)
+e: _|_ == _|_           @test(eq, true)
+f: ({} & false) == _|_  @test(eq, true)
+g: _|_ != ({} & false)  @test(eq, false)
+-- oracle/error --
+conflict -

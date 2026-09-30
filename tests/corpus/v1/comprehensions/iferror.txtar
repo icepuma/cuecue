@@ -1,0 +1,124 @@
+-- in.cue --
+a: {b: 2, c: int}
+
+wrongConcreteType: {
+	if a.b {
+		2
+	}
+	@test(err, code=eval, contains="cannot use 2 (type int) as type bool", pos=[1:2, -2:8])
+}
+
+wrongType: {
+	if a.c {
+		2
+	}
+	@test(err, code=eval, contains="cannot use int (type int) as type bool", pos=[1:2, -9:14])
+}
+
+incomplete: err1: {
+	if a.d {
+		2
+	}
+	@test(err, code=incomplete, contains="undefined field: d", pos=[1:7])
+}
+incomplete: err2: {
+	list: [1, 2, 3]
+	for x in list if a.d {
+		x
+	}
+	@test(err, code=incomplete, contains="undefined field: d", pos=[2:21])
+}
+
+// issue809: Tests that comprehension guards using `!= _|_` work correctly
+// when the guarded field has a default value. In both cases below the field
+// being tested is non-bottom (it carries a default), so the guard should
+// pass and the comprehension should yield the entry.
+// https://cuelang.org/issue/809
+useDefault: {
+	a: {
+		x: *"foo" | string
+		if x != _|_ {
+			y: x
+		}
+	}
+
+	issue809: {
+		#A: {
+			a: string
+			b: *a | string
+		}
+
+		s: [Name=string]: #A & {a: Name}
+		s: bar:           _
+
+		foo: [
+			for _, a in s if a.b != _|_ {a},
+		]
+
+		@test(eq, {
+			#A: {
+				a: string
+				b: string
+			}
+			s: bar: {
+				a: "bar"
+				b: *"bar" | string
+			}
+			foo: [{
+				a: "bar"
+				b: *"bar" | string
+			}]
+		})
+	}
+}
+
+// issue1972: Tests that mixing a list value with struct fields in a
+// comprehension correctly produces a conflict error rather than a panic.
+// https://cuelang.org/issue/1972
+issue1972: {
+	err1: {
+		#patchs: []
+		#patchs
+
+		#someCondition: _
+		if #someCondition {
+		}
+	}
+	err1: {
+		someCondition: _
+		patchs: [...{}]
+		patchs
+		if someCondition {
+			patchs: _
+		}
+	} @test(err, code=eval,
+		contains="conflicting values %s and %s (mismatched types %s and %s)",
+		pos=[0:8, 2:11, 3:3]
+	)
+	err2: {
+		#patchs: []
+		#patchs
+
+		#someCondition: _
+		if #someCondition {
+		}
+	} @test(err, code=incomplete, contains="incomplete %s: %s", args=[bool, _], pos=[])
+	err3: {
+		someCondition: _
+		patchs: [...{}]
+		patchs
+		if someCondition {
+			patchs: _
+		}
+
+		// TODO(inline): support commas in arguments
+		@test(err, code=eval, contains="conflicting values %s and %s (mismatched types %s and %s)",
+			pos=[0:8, 2:11, 3:3]
+		)
+	}
+}
+-- oracle/error --
+conflict issue1972.err1
+conflict issue1972.err3
+conflict wrongConcreteType
+conflict wrongType

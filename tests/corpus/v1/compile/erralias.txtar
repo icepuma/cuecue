@@ -1,0 +1,16 @@
+// Caused a stack overflow on evalv2.
+#inlinetest:exclude skip: compile errors.
+-- in.cue --
+ let X = {}
+
+[Y="foo"]: 3
+a:         Y
+
+c: {}
+for x in c {a: E}
+
+Z1=[Z2=string]: Z1 + Z2
+-- oracle/error --
+reference a
+reference for[].a
+syntax -

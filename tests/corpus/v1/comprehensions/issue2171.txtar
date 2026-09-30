@@ -1,0 +1,17 @@
+// Sometimes an arc should not "Finalize" itself. See Issue #2171 in eval.go.
+-- in.cue --
+package x
+
+do: {
+	hello: {
+	}
+}
+
+for k, v in do {do: (k): v}
+@test(eq, {do: hello: {}})
+-- oracle/export.json --
+{
+    "do": {
+        "hello": {}
+    }
+}

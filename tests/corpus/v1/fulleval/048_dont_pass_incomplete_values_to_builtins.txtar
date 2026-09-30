@@ -1,0 +1,10 @@
+#name: dont pass incomplete values to builtins
+#evalFull
+-- in.cue --
+import "encoding/json"
+
+input: string              @test(kind=string)
+foo:   json.Marshal(input) @test(err, code=incomplete)
+-- oracle/error --
+incomplete foo
+incomplete input

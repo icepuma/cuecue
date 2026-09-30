@@ -1,0 +1,15 @@
+raw: true
+eval: true
+noOpt: true
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{
+	#And: {
+		#: "Fn::And": [...(3 | #And)]
+	}
+	#Ands: #And & {
+		#: "Fn::And": [_]
+	}
+}
+-- oracle/export.json --
+{}

@@ -1,0 +1,20 @@
+-- in.cue --
+a: b.c.d        @test(eq, 3)
+b: {c: {d: 3}}
+c: {c: d.d}     @test(eq, {c: 2})
+d: {d: 2}
+-- oracle/export.json --
+{
+    "a": 3,
+    "b": {
+        "c": {
+            "d": 3
+        }
+    },
+    "c": {
+        "c": 2
+    },
+    "d": {
+        "d": 2
+    }
+}

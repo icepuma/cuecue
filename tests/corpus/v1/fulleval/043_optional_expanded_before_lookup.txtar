@@ -1,0 +1,32 @@
+#name: optional expanded before lookup
+#evalFull
+-- in.cue --
+test: [ID=_]: {
+	name: ID
+}
+
+test: A: {
+	field1: "1"
+	field2: "2"
+}
+
+B: test.A & {} @test(eq, {
+	field1: "1"
+	field2: "2"
+	name: "A"
+})
+-- oracle/export.json --
+{
+    "test": {
+        "A": {
+            "name": "A",
+            "field1": "1",
+            "field2": "2"
+        }
+    },
+    "B": {
+        "field1": "1",
+        "field2": "2",
+        "name": "A"
+    }
+}

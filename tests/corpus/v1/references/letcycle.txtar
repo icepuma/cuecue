@@ -1,0 +1,54 @@
+#inlinetest:exclude mutually recursive let bindings produce compile-time cycle errors
+# which prevent the inline runner from compiling the source. Issue #1042.
+#expandLetExpr: true
+-- in.cue --
+import "list"
+
+cycles: {
+	a: {
+		let A = {c: B}
+		let B = A
+		out: A
+	}
+
+	b: {
+		let A = {c: B}
+		let B = {A.c}
+		out: A
+	}
+
+	issue1042: {
+		#FullAdder: {
+			// IN
+			a: bool
+			b: bool
+			c: bool
+			// OUT
+			sum:   bool
+			carry: bool
+		}
+
+		#Add16: {
+			a:   [bool] * 16
+			b:   [bool] * 16
+			out: [bool] * 16
+
+			let fulladders = [
+				for i in list.Range(0, 4, 1) {
+					#FullAdder & {"a": a[i], "b": b[i], c: carries[i]}
+				},
+			]
+			let carries = [
+				false,
+				for i in list.Range(0, 4, 1) {fulladders[i].carry},
+			]
+			out: [
+				for i in list.Range(0, 4, 1) {fulladders[i].sum},
+			]
+		}
+	}
+}
+-- oracle/error --
+cycle cycles.a.let[].c
+cycle cycles.b.let[].c
+cycle cycles.issue1042.#Add16.let[].for[].c

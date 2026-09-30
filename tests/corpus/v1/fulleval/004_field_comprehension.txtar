@@ -1,0 +1,40 @@
+-- in.cue --
+a: {
+	for k, v in b
+	if k < "d"
+	if v > b.a {
+		"\(k)": v
+	}
+	@test(eq, {b: 2, c: 3})
+}
+b: {
+	a: 1
+	b: 2
+	c: 3
+	d: 4
+}
+c: {
+	for k, v in b
+	if k < "d"
+	if v > b.a {
+		"\(k)": v
+	}
+	@test(eq, {b: 2, c: 3})
+}
+-- oracle/export.json --
+{
+    "a": {
+        "b": 2,
+        "c": 3
+    },
+    "b": {
+        "a": 1,
+        "b": 2,
+        "c": 3,
+        "d": 4
+    },
+    "c": {
+        "b": 2,
+        "c": 3
+    }
+}

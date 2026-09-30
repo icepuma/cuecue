@@ -1,0 +1,33 @@
+raw: true
+eval: true
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{
+	u16:  int & >=0 & <=65535
+	u32:  uint32
+	u64:  uint64
+	u128: uint128
+	u8:   uint8
+	ua:   uint16 & >0
+	us:   >=0 & <10_000 & int
+	i16:  >=-32768 & int & <=32767
+	i32:  int32 & >0
+	i64:  int64
+	i128: int128
+	f64:  float64
+	fi:   float64 & int
+}
+-- oracle/error --
+incomplete f64
+incomplete fi
+incomplete i128
+incomplete i16
+incomplete i32
+incomplete i64
+incomplete u128
+incomplete u16
+incomplete u32
+incomplete u64
+incomplete u8
+incomplete ua
+incomplete us

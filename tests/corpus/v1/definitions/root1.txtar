@@ -1,0 +1,16 @@
+-- in.cue --
+// Test embedding at root of file
+root1: 1
+#Root1: x: {}
+#Root1 & { }
+
+@test(eq, {
+	root1: 1
+	#Root1: x: {}
+	x: {}
+})
+-- oracle/export.json --
+{
+    "root1": 1,
+    "x": {}
+}

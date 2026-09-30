@@ -1,0 +1,34 @@
+-- in.cue --
+root: input: foo: {
+    metadata: name: *"foo" | string
+    id: "id-\(metadata.name)"
+    #deps: [string]: _
+    #deps: root: {}
+    spec: replicas: 1
+}
+{root.input.foo.#deps}
+
+@test(eq, {
+	root: input: foo: {
+		metadata: name: *"foo" | string
+		id: "id-foo"
+		#deps: root: {}
+		spec: replicas: 1
+	}
+})
+-- oracle/export.json --
+{
+    "root": {
+        "input": {
+            "foo": {
+                "metadata": {
+                    "name": "foo"
+                },
+                "id": "id-foo",
+                "spec": {
+                    "replicas": 1
+                }
+            }
+        }
+    }
+}

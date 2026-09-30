@@ -1,0 +1,9 @@
+-- in.cue --
+#S: {
+	[string]: {a: int}
+}
+a: #S & {
+	v: {b: int}
+} @test(err, at=v.b, code=eval, contains="field not allowed", pos=[1:6])
+-- oracle/error --
+closed a.v.b

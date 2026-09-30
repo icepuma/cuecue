@@ -1,0 +1,83 @@
+-- in.cue --
+deployment: [string]: #Deployment
+
+deployment: foo: spec: replicas: 1
+
+@test(eq, {
+	[string]: spec: replicas: int
+	foo: spec: replicas: 1
+}, at=deployment)
+
+#Deployment: {
+	#TypeMeta
+
+	spec: #Spec
+}
+
+#Spec: replicas: int
+
+#TypeMeta: {}
+
+recloseSimple: {
+	#foo: {}
+	a: {#foo} & {b: int} @test(err, at=b, code=eval, contains="field not allowed", pos=[0:15])
+}
+
+// Reclosing
+reclose1: {
+	#D: {
+		x: int
+		y: int
+	}
+	#a: {
+		#D
+		b: {
+			c: int
+		}
+	}
+
+	z: #a.b
+	z: d: 3 @test(err, code=eval, contains="field not allowed", pos=[0:5])
+}
+
+reclose2: {
+	#D: {
+		x: int
+		y: int
+	}
+	a: {
+		#D
+		b: {// keep open
+			c: int
+		}
+	}
+
+	z: a.b @test(eq, { c: int, d: 3 })
+	z: d: 3
+}
+
+reclose3: {
+	#Step: {
+		(#A | #B)
+		#Common
+	}
+	#Common: {
+		Name: string
+	}
+	#A: {
+		#Common
+		Something: int
+	}
+	#B: {
+		#Common
+		Else: int
+	}
+	x: #Step
+	x: #A & {
+		Name:      "a"
+		Something: 4
+	} @test(eq, {Name: "a", Something: 4})
+}
+-- oracle/error --
+closed reclose1.z.d
+closed recloseSimple.a.b

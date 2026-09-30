@@ -1,0 +1,406 @@
+# Tests that evaluating a value through a builtin (regexp.FindNamedSubmatch)
+# and then back into a value does not cause incorrect cycle detection.
+-- in.cue --
+import "regexp"
+
+// Issue #655
+// When evaluating a value into a struct, and then back into a value, the
+// evaluation mode flips from Partial to AllConjunctsDone to Back. This is
+// typically not an issue, but if a referred field is within a struct generated
+// by a builtin, effectively the entire struct needs to be evaluated and special
+// care should be taking to not evaluate too early.
+builtinCyclePerm: {
+	@test(permute, count=6)
+	X: "mod.test"
+
+	Y: {
+		#components: regexp.FindNamedSubmatch(#"^(?P<host>[[:alnum:].]+)$"#, X)
+		host:        #components.host
+	}
+
+	X: Y.host
+
+	@test(eq, {
+		X: "mod.test"
+		Y: {
+			#components: {host: "mod.test"}
+			host: "mod.test"
+		}
+	})
+}
+-- matchn.cue --
+// This should not be a structural cycle, as the list type is "optional".
+issue3410: {
+	_s
+	_s: {
+		#x: matchN(1, [_s, [..._s]])
+	}
+	// TODO(inline): inline test outputs references in calls. This was crafted
+	// by hand.
+	@test(eq, {
+		_s: {#x: matchN(1, [_|_, []])}
+		#x: matchN(1, [_|_, []])
+	})
+}
+issue3420: {
+	matches1: {
+		#S: matchN(1, [_, _|_])
+		s: 2
+	}
+	@test(eq, {
+		matches1: {#S: matchN(1, [_, _|_]), s: 2}
+	})
+}
+issue3443: {
+	matchIf: {
+		#S: matchIf({x?: "b"}, {n?: #S & (int | {})}, _)
+	}
+	noCycle: {
+		// This is not a structural cycle, and should not hang, as n? is optional.
+		#S: matchN(1, [{n?: #S & (int | {})}])
+
+		noHang: {
+			s: #S
+			s: n: n: _
+		}
+	}
+
+	noCycle2: {
+		#S: matchN(1, [{n?: (int | #S)}])
+	}
+
+	cycle1: {
+		// This correct CUE, as matchN allows for schema to be errors. We should
+		// probably have a vet rule to catch this,though.
+		#S: matchN(1, [{n: #S}])
+
+		// This is not an error as the result is structure shared. Not sure if
+		// this should be accepted.
+		ok: {
+			s: #S
+			s: _
+		}
+
+		// This unifies deep enough to cause a structural cycle. It probably
+		// should not.
+		cycle: {
+			s: #S
+			s: n: n: _
+		}
+	}
+
+	cycle2: {
+		// TODO: this should probably fail, or at least be consistent with
+		// cycle1.cycle.
+		fail: #S: matchN(1, [{n: #S}]) & {n: n: n: _}
+	}
+	@test(err, pos=[2:7])
+}
+selfRefConcrete: {
+	// A matchN whose schema list refers back to the hidden field being
+	// validated makes no progress when that field is also unified with a
+	// concrete value. This must be reported as a structural cycle rather
+	// than causing the evaluator to loop forever.
+	_x1: matchN(2, [_x1, _x1])
+	x:   3 & _x1 @test(err, pos=[-1:7, -1:14, 0:7])
+
+	// matchIf is subject to the same kind of self-referential cycle.
+	_y1: matchIf(_y1, _y1, _y1)
+	y:   3 & _y1 @test(err, pos=[-1:7, -1:25, 0:7])
+}
+issue3633: final: {
+	// With nested matchNs as below, the schema will become an incomplete error
+	// as a value of the root vertex. Make sure this edge case is properly
+	// handled.
+	data: {} & #s @test(err, code=incomplete, pos=[1:6, 0:8, 1:13])
+	#s: matchN(1, [matchN(1, [{a!: _}])])
+}
+issue3842: reduced: {
+	#recursive: [...matchIf({
+		source?: "multi"
+	}, #recursive, _) & {
+		source?: string
+	}]
+	@test(eq, {#recursive: []})
+}
+-- cycle.cue --
+import "strconv"
+
+noCycle: t1: {
+	_s
+	_s: {
+		#x: matchN(1, [_s])
+        #x: {} // insert concrete value to trigger application of validator.
+	}
+	@test(err, pos=[3:7, 3:14, 4:13])
+}
+issue3649: noCycle: t1: {
+	data: #c
+	data: a: b: "foo"
+	#c: {
+		// There should be no cycle because of these optional fields.
+		b?: string
+		a?: matchN(1, [#c])
+	}
+	// Cannot use @test(eq) with self-referential #c in expected value.
+	@test(eq, "foo", at=data.a.b)
+	@test(debug, """
+		(struct){
+		  data: (#struct){
+		    a: (#struct){
+		      b: (string){ "foo" }
+		    }
+		    b?: (string){ string }
+		  }
+		  #c: (#struct){
+		    b?: (string){ string }
+		    a?: (_){ matchN(1, (#list){
+		        0: (_|_){// 〈2;#c〉
+		        }
+		      }) }
+		  }
+		}
+		""")
+}
+// Same as above, but with longer paths.
+issue3649: noCycle: t2: {
+	x: c
+	x: y: a: d: b: "foo"
+	c: {
+		b?: string
+		y: a?: matchN(1, [{d: c}])
+	}
+	// Cannot use @test(eq) with self-referential c in expected value.
+	@test(eq, {a: {d: {b: "foo"}}}, at=x.y)
+	@test(debug, """
+		(struct){
+		  x: (struct){
+		    y: (struct){
+		      a: (struct){
+		        d: (struct){
+		          b: (string){ "foo" }
+		        }
+		      }
+		    }
+		    b?: (string){ string }
+		  }
+		  c: (struct){
+		    b?: (string){ string }
+		    y: (struct){
+		      a?: (_){ matchN(1, (#list){
+		          0: (_|_){// {
+		            //   d: 〈4;c〉
+		            // }
+		          }
+		        }) }
+		    }
+		  }
+		}
+		""")
+}
+issue3649: cycle: t1: {
+	data: #c
+	data: a: b: "foo"
+	#c: {
+		b: string
+		a: matchN(1, [#c])
+	}
+	@test(err, pos=[5:6, 2:11, 5:13])
+}
+
+// This used to cause a stack overflow.
+issue4037: cycle: {
+	_intlike: x=matchN(1, [strconv.Atoi(x)])
+	f: "1233" & _intlike
+	@test(err, pos=[1:14, 1:21, 2:5])
+}
+-- yamlcycle.cue --
+import "encoding/yaml"
+
+yamlNoCycle: {
+	// the validator is invoked recursively and also unifies with a concrete
+	// value. This should nonetheless not result in a cycle error.
+    #c: {
+        b?: string
+        a?: yaml.Validate(#c)
+    }
+    data: #c
+    data: a: #"{a: "b: foo"}"#
+	@test(eq, {
+		#c: {
+			b?: string
+			a?: yaml.Validate({
+		b?: string
+		a?: _
+	})
+		}
+		data: {a: "{a: \"b: foo\"}", b?: string}
+	})
+}
+selfCycle: t1: {
+	c: matchN(1, [{d: c}])
+	c: d: {}
+	@test(err, pos=[1:5, 1:12, 2:5])
+}
+selfCycle: t2: {
+	// Even though only part of the path is unified with concrete data, this
+	// should still result in a cycle error.
+	c: matchN(1, [{d: c}])
+	c: {}
+	@test(eq, {c: {}})
+}
+selfCycle: yamlVal: t1: {
+	x: y: yaml.Validate(x)
+	x: y: "{}"
+	@test(err, pos=[1:8, 2:8])
+}
+selfCycle: yamlVal: t2: {
+	// Duplicating validators can cause some tricky code paths, like finalizing
+	// a node while still in the middle of validation.
+	x: y: yaml.Validate(x)
+	x: y: "{}"
+	x: y: yaml.Validate(x)
+	x: y: "{}"
+	@test(err, pos=[3:8, 4:8, 5:8, 6:8])
+}
+selfCycle: yamlFun: t1:{
+	x: y?: yaml.Validate("{}", x)
+	@test(eq, {x: {y?: true}})
+}
+selfCycle: yamlFun: t2: {
+	z: x & __no_sharing
+	z: y: "{}"
+	x: y: yaml.Validate("{}", x)
+	@test(err, pos=[3:8])
+}
+selfCycle: yamlValidatePartial: {
+	x: y: yaml.ValidatePartial(x)
+	x: y: "{}"
+	@test(err, pos=[1:8, 2:8])
+}
+-- jsoncycle.cue --
+import "encoding/json"
+
+jsonCycle: t1: {
+	x: y: json.Validate(x)
+	x: y: "{}"
+	@test(err, pos=[1:8, 2:8])
+}
+-- listmatchncycle.cue --
+import "list"
+
+listMatchN: structCycle: {
+	x: y: list.MatchN(1, x)
+	x: y: [{}]
+	@test(err, pos=[1:8, 1:5, 1:20, 2:5, 2:8])
+}
+listMatchN: ok: {
+	x: y?: list.MatchN(1, x)
+    z: x
+	z: y: [{}]
+	// x.y? is non-concrete (list.MatchN validator); only check z.y which is concrete.
+	@test(eq, [{}], at=z.y)
+	@test(debug, """
+		(struct){
+		  x: (struct){
+		    y?: (list){ list.MatchN(1, listMatchN.ok.x) }
+		  }
+		  z: (struct){
+		    y: (#list){
+		      0: (struct){
+		      }
+		    }
+		  }
+		}
+		""")
+}
+-- issue3634.cue --
+// evalv3 structural cycle regression: using `len(...)` with a `#Schema`
+// embedding inside `list.Repeat` caused a spurious structural cycle error
+// that did not occur in evalv2.
+// https://cuelang.org/issue/3634
+import "list"
+
+issue3634: full: {
+	#Schema: {
+		required?: [...string]
+		properties?: [string]: null | #Schema
+	}
+
+	out: len([...#Schema] & list.Repeat([{
+		#Schema // removing this fixes the bug!
+		properties: foo: required: ["bar", "baz"]
+	}], 3))
+
+	@test(eq, {
+		#Schema: {required?: [], properties?: {}}
+		out: 3
+	})
+}
+issue3634: reduced: {
+	#D: {
+		b?: int
+		a?: #D
+	}
+	out: len(#D & list.Repeat([#D & { a: b: 1 }], 1)[0])
+
+	@test(eq, {
+		#D: {
+			b?: int
+			a?: _|_ @test(err, code=structural_cycle, contains="issue3634.reduced.#D.a: structural cycle", pos=[])
+		}
+		out: 1
+	})
+}
+-- issue3743.cue --
+// Passing a cyclic value to `yaml.MarshalStream` caused a stack overflow
+// instead of a clean structural cycle error.
+// https://cuelang.org/issue/3743
+import "encoding/yaml"
+
+issue3743: {
+	#transform: {
+	    in: _
+	    out: [
+	        if false {out}, // note that this is a cycle
+	        in,
+	    ]
+	}
+
+	docs: [ (#transform & {in: "x"}).out ]
+	out: yaml.MarshalStream(docs)
+
+	@test(eq, {
+		#transform: {in: _, out: [_]}
+		docs: [["x"]]
+		out: "- x\n"
+	})
+}
+-- oracle/error --
+call issue3443.matchIf.#S
+conflict 0
+conflict issue3443.cycle1.cycle.s
+conflict issue3443.cycle2.fail.#S
+conflict issue3443.cycle2.fail.#S.n
+conflict issue3649.cycle.t1.data.a
+conflict issue4037.cycle.f
+conflict listMatchN.structCycle.x.y
+conflict noCycle.t1.#x
+conflict noCycle.t1._s.#x
+conflict selfCycle.t1.c
+conflict selfCycle.t1.c.d
+conflict selfRefConcrete.x
+cycle issue3443.cycle1.cycle.s.n
+cycle issue3443.cycle2.fail.#S.n.n
+cycle issue3649.cycle.t1.data.a.a
+cycle jsonCycle.t1.x.y
+cycle noCycle.t1.#x.#x
+cycle noCycle.t1._s.#x
+cycle selfCycle.t1.c.d.d
+cycle selfCycle.yamlFun.t2.x.y
+cycle selfCycle.yamlFun.t2.z.y
+cycle selfCycle.yamlVal.t1.x.y
+cycle selfCycle.yamlVal.t2.x.y
+cycle selfCycle.yamlValidatePartial.x.y
+cycle selfRefConcrete.x
+cycle selfRefConcrete.y

@@ -1,0 +1,21 @@
+-- in.cue --
+A: {
+	[=~"^[a-s]*$"]: int
+}
+B: {
+	[=~"^[m-z]*$"]: int
+}
+#C: {A & B}
+c: #C & {aaa: 3} @test(eq, {
+	[=~"^[a-s]*$"]: int
+	[=~"^[m-z]*$"]: int
+	aaa: 3
+})
+-- oracle/export.json --
+{
+    "A": {},
+    "B": {},
+    "c": {
+        "aaa": 3
+    }
+}

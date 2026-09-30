@@ -1,0 +1,22 @@
+-- in.cue --
+#S: {
+	a: {c: int}
+	{
+		c: {d: int}
+	}
+	let B = {open: int}
+	b: B
+} @test(eq, {
+	a: {c: int}
+	c: {d: int}
+	b: {open: int}
+})
+V: #S & {
+	c: e:     int
+	b: extra: int
+}
+@test(err, code=eval, at=V.b.extra, contains="field not allowed", pos=[-2:5])
+@test(err, code=eval, at=V.c.e, contains="field not allowed", pos=[-4:5])
+-- oracle/error --
+closed V.b.extra
+closed V.c.e

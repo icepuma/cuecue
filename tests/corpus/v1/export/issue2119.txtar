@@ -1,0 +1,69 @@
+-- in.cue --
+import (
+	"encoding/yaml"
+	"regexp"
+)
+
+simplified: {
+	x: d: R={
+		".*"
+		[R+""][0]
+	}
+	out: yaml.Marshal(x)
+	@test(eq, {x: {d: ".*"}, out: "d: .*\n"})
+}
+
+original: {
+	#testableRegexp: R={
+		string
+
+		#test: close({
+			in:  string
+			out: regexp.FindSubmatch("^"+R+"$", in)[1]
+		})
+	}
+
+	rule: {
+		#patterns: {
+			bar: #testableRegexp & {
+				"(.*)"
+				#test: {in: "testcontent", out: "testcontent"}
+			}
+		}
+	}
+	out: yaml.Marshal(rule)
+	@test(eq, {
+		#testableRegexp: {
+			string
+			#test: {
+				in: string
+				out: _|_ @test(err, code=incomplete, contains="original.#testableRegexp.#test.out: non-concrete value string in operand to +", pos=[6:29, 1:21, 2:3])
+			}
+		}
+		rule: {
+			#patterns: {
+				bar: {
+					"(.*)"
+					#test: {in: "testcontent", out: "testcontent"}
+				}
+			}
+		}
+		out: """
+		{}
+
+		"""
+	})
+}
+-- oracle/export.json --
+{
+    "simplified": {
+        "x": {
+            "d": ".*"
+        },
+        "out": "d: .*\n"
+    },
+    "original": {
+        "rule": {},
+        "out": "{}\n"
+    }
+}

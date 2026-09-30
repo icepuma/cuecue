@@ -1,0 +1,12 @@
+-- in.cue --
+eql: null == null @test(eq, true)
+neq: null != null @test(eq, false)
+unf: null & null  @test(eq, null)
+
+// errors
+eq1:  null == 1   @test(eq, false)
+eq2:  1 == null   @test(eq, false)
+ne1:  "s" != null @test(eq, true)
+call: null()      @test(err, code=eval, pos=[0:7], contains="cannot call non-function")
+-- oracle/error --
+call call

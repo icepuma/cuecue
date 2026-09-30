@@ -1,0 +1,8 @@
+# Tests that a pattern constraint [_]: _ over an open struct results in
+# an open struct without any concrete fields.
+-- in.cue --
+a: {[_]: _}   @test(eq, {})
+-- oracle/export.json --
+{
+    "a": {}
+}

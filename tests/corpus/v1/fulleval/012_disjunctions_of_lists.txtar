@@ -1,0 +1,10 @@
+-- in.cue --
+l: *[int, int] | [string, string]
+
+t1: {
+	l & ["c", "d"]
+	@test(eq, ["c", "d"])
+}
+-- oracle/error --
+incomplete l.0
+incomplete l.1

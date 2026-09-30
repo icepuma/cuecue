@@ -1,0 +1,17 @@
+-- in.cue --
+dynamic: {
+	@test(permute, count=6)
+
+	X=(a): 1
+	x: X
+	a: "name"
+	@test(eq, {x: 1, a: "name", name: 1})
+}
+-- oracle/export.json --
+{
+    "dynamic": {
+        "name": 1,
+        "x": 1,
+        "a": "name"
+    }
+}

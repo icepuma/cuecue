@@ -1,0 +1,8 @@
+-- in.cue --
+Foo: {} @test(eq, {})
+
+Foo
+-- oracle/export.json --
+{
+    "Foo": {}
+}

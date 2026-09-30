@@ -1,0 +1,32 @@
+-- in.cue --
+package bench1
+
+#Value: {type: "float"} | {type: "string"}
+
+foo: {type: "string"}
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+foo: #Value
+
+@test(eq, {
+	#Value: {type: "float"} | {type: "string"}
+	foo: {type: "string"}
+})
+-- oracle/export.json --
+{
+    "foo": {
+        "type": "string"
+    }
+}

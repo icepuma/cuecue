@@ -1,0 +1,53 @@
+# Tests that matching a data value against a large matchIf schema (with many
+# nested disjunctions and required fields) completes in bounded time. The
+# schema models a Dependabot config; the original issue caused a hang.
+# https://cuelang.org/issue/3514
+-- in.cue --
+import "list"
+
+_schema & _data
+_data: {
+  "updates": [
+    {
+      "schedule": {
+        "interval": "daily"
+      }
+    }
+  ],
+}
+
+_schema: {
+    matchIf(
+        null | bool | number | string | [...] | {"enable-beta-ecosystems"!: true},
+        _,
+        null | bool | number | string | [...] | {
+            "updates"?: null | bool | number | string | [...null | bool | number | string | [...] | {...}] | {...}
+            ...
+        }
+    ) & {
+        "updates"!: [...#update]
+    }
+
+    #update: {
+        "schedule"!: {
+            "timezone"?: #timezone
+            ...
+        }
+        ...
+    }
+
+    // This was originally a list of 571 explicit time zones.
+    #timezone: or([for i in list.Range(0, 571, 1) {"\(i)"}])
+}
+
+@test(eq, at=_data, { updates: [{schedule: {interval: "daily"}}] })
+-- oracle/export.json --
+{
+    "updates": [
+        {
+            "schedule": {
+                "interval": "daily"
+            }
+        }
+    ]
+}

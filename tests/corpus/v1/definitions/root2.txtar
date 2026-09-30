@@ -1,0 +1,13 @@
+-- in.cue --
+root2: 1
+#Root2: {}
+#Root2
+
+@test(eq, {
+	root2: 1
+	#Root2: {}
+})
+-- oracle/export.json --
+{
+    "root2": 1
+}

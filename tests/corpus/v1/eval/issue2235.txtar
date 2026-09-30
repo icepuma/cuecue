@@ -1,0 +1,225 @@
+# Tests that nested for-loop comprehensions with dynamic field assignments do
+# not trigger a nil pointer dereference panic. The issue occurred in the
+# evaluator's conjunct handling when processing nested iterations over structs.
+# https://cuelang.org/issue/2235
+// Test various orders
+// https://cuelang.org/issues/2235
+-- reductions.cue --
+// Each of these tests triggers a slightly different path.
+
+t1: {
+	params: x.y
+	x: y: {}
+	for _ in x {
+		if true {
+			x: y: a: {}
+		}
+	}
+	@test(eq, {params: {a: {}}, x: {y: {a: {}}}})
+}
+
+t2: {
+	out: X.y
+	let X = m.x
+	m: x: y: {}
+	for v in m {
+		if true {
+			m: x: y: z: {}
+		}
+	}
+	@test(eq, {out: {z: {}}, m: {x: {y: {z: {}}}}})
+}
+
+t3: {
+	out: foo.bar
+
+	foo: bar: {}
+
+	for _ in foo {
+		for name, _ in foo {
+			foo: (name): _
+		}
+	}
+	@test(eq, {out: {}, foo: {bar: {}}})
+}
+
+-- issue2235.cue --
+package kubecluster
+
+import (
+	"strings"
+	"net"
+)
+
+shorewallParams: close({
+	[=~"^[A-Z0-9_]+$"]: [...net.IP]
+})
+
+#Cluster: {
+	clusterName:     string
+	shorewallPrefix: "KUBERNETES_\(strings.ToUpper(clusterName))"
+}
+
+clusters: [CLUSTER=string]: #Cluster & {
+	clusterName: CLUSTER
+}
+
+#Cluster: {
+	globalIngressControllers: [string]: #GlobalIngressController
+	globalIngressControllers: admin:    #GlobalIngressController & {
+		class: "admin"
+	}
+	for _, c in globalIngressControllers {
+		objects: c.objects
+	}
+}
+
+for clusterName, cluster in clusters {
+	for class, controller in cluster.globalIngressControllers {
+		let svc = controller.objects.namespaced.ingress.Service["\(class)-nginx-ingress-controller"]
+
+		shorewallParams: "\(cluster.shorewallPrefix)_INGRESS_\(strings.ToUpper(class))": svc.spec.externalIPs
+	}
+}
+
+#GlobalIngressController: {
+	class: string
+
+	objects: namespaced: ingress: {
+		Service: "\(class)-nginx-ingress-controller": {
+			spec: {
+				externalIPs: ["127.0.0.1"]
+			}
+		}
+	}
+
+	for kind, objs in objects.namespaced.ingress {
+		for name, obj in objs {
+			objects: namespaced: ingress: "\(kind)": "\(name)": metadata: labels: {
+				"ingress-class": class
+				stack:           "ingress"
+				...
+			}
+		}
+	}
+}
+
+clusters: foo: {}
+
+@test(eq, {
+	foo: {
+		clusterName: "foo"
+		shorewallPrefix: "KUBERNETES_FOO"
+		globalIngressControllers: admin: {
+			class: "admin"
+			objects: namespaced: ingress: Service: {
+				"admin-nginx-ingress-controller": {
+					spec: {externalIPs: ["127.0.0.1"]}
+					metadata: labels: {
+						"ingress-class": "admin"
+						stack: "ingress"
+					}
+				}
+			}
+		}
+		objects: namespaced: ingress: {
+			Service: "admin-nginx-ingress-controller": {
+				spec: {externalIPs: ["127.0.0.1"]}
+				metadata: labels: {
+					"ingress-class": "admin"
+					stack: "ingress"
+				}
+			}
+		}
+	}
+}, at=clusters)
+
+-- oracle/export.json --
+{
+    "shorewallParams": {
+        "KUBERNETES_FOO_INGRESS_ADMIN": [
+            "127.0.0.1"
+        ]
+    },
+    "clusters": {
+        "foo": {
+            "clusterName": "foo",
+            "globalIngressControllers": {
+                "admin": {
+                    "class": "admin",
+                    "objects": {
+                        "namespaced": {
+                            "ingress": {
+                                "Service": {
+                                    "admin-nginx-ingress-controller": {
+                                        "metadata": {
+                                            "labels": {
+                                                "ingress-class": "admin",
+                                                "stack": "ingress"
+                                            }
+                                        },
+                                        "spec": {
+                                            "externalIPs": [
+                                                "127.0.0.1"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "objects": {
+                "namespaced": {
+                    "ingress": {
+                        "Service": {
+                            "admin-nginx-ingress-controller": {
+                                "metadata": {
+                                    "labels": {
+                                        "ingress-class": "admin",
+                                        "stack": "ingress"
+                                    }
+                                },
+                                "spec": {
+                                    "externalIPs": [
+                                        "127.0.0.1"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "shorewallPrefix": "KUBERNETES_FOO"
+        }
+    },
+    "t1": {
+        "params": {
+            "a": {}
+        },
+        "x": {
+            "y": {
+                "a": {}
+            }
+        }
+    },
+    "t2": {
+        "out": {
+            "z": {}
+        },
+        "m": {
+            "x": {
+                "y": {
+                    "z": {}
+                }
+            }
+        }
+    },
+    "t3": {
+        "out": {},
+        "foo": {
+            "bar": {}
+        }
+    }
+}

@@ -1,0 +1,42 @@
+-- in.cue --
+a: [A=string]: b: [B=string]: {
+	name: A
+	kind: B
+}
+a: "A": b: "B": _    @test(eq, {name: "A", kind: "B"})
+a: "C": b: "D": _    @test(eq, {name: "C", kind: "D"})
+a: "EE": b: "FF": {c: "bar"} @test(eq, {
+	c:    "bar"
+	name: "EE"
+	kind: "FF"
+})
+-- oracle/export.json --
+{
+    "a": {
+        "A": {
+            "b": {
+                "B": {
+                    "name": "A",
+                    "kind": "B"
+                }
+            }
+        },
+        "C": {
+            "b": {
+                "D": {
+                    "name": "C",
+                    "kind": "D"
+                }
+            }
+        },
+        "EE": {
+            "b": {
+                "FF": {
+                    "name": "EE",
+                    "kind": "FF",
+                    "c": "bar"
+                }
+            }
+        }
+    }
+}

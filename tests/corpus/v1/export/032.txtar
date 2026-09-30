@@ -1,0 +1,10 @@
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{
+	[string]: _
+	foo:      3
+}
+-- oracle/export.json --
+{
+    "foo": 3
+}

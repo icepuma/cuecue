@@ -1,0 +1,18 @@
+-- in.cue --
+package lpcorpus
+
+#Value:   {type: "int"} | {type: "float"} | {type: "string"}
+@test(eq, {type: "int"} | {type: "float"} | {type: "string"}, at=#Value)
+
+foo: [{type: "float"}] & [...#Value] @test(err, code=eval, path=foo.0.type, pos=[0:14, 5:14])
+foo: [{type: "float"}] & [...#Value]
+foo: [{type: "float"}] & [...#Value]
+foo: [{type: "float"}] & [...#Value]
+foo: [{type: "float"}] & [...#Value]
+foo: [{type: "string"}] & [...#Value]
+foo: [{type: "string"}] & [...#Value]
+foo: [{type: "string"}] & [...#Value]
+foo: [{type: "float"}] & [...#Value]
+foo: [{type: "float"}] & [...#Value]
+-- oracle/error --
+conflict foo.0.type

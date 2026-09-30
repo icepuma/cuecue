@@ -1,0 +1,19 @@
+# Merging an equal disjunct into its recorded counterpart used to panic in
+# mergeCloseInfo when arc states had been reclaimed too early.
+# See: https://cuelang.org/issue/4419
+-- in.cue --
+import "struct"
+
+b: {[string]: string} | *{}
+a: struct.MaxFields(8) & {[string]: string}
+b: "test": "test"
+a: b @test(eq, {test: "test"})
+-- oracle/export.json --
+{
+    "b": {
+        "test": "test"
+    },
+    "a": {
+        "test": "test"
+    }
+}

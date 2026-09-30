@@ -1,0 +1,12 @@
+# The evaluator enters an infinite loop when processing a cycle involving
+# struct embeddings, causing `cue eval` to hang indefinitely.
+# https://cuelang.org/issue/2526
+-- in.cue --
+x
+x: {
+	y
+	y: x
+}
+@test(err, code=structural_cycle, path=x.y, contains="structural cycle", pos=[])
+-- oracle/error --
+cycle x.y

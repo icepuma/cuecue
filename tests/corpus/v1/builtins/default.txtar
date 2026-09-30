@@ -1,0 +1,20 @@
+-- in.cue --
+Len: len(*[1, 2, 3] | 0) @test(eq, 3)
+Close: close(*{} | 0)    @test(eq, {}) @test(closed)
+And: and(*[1, 1] | int)  @test(eq, 1)
+Or: or(*[1, 1] | int)    @test(eq, 1)
+Div: div(*5 | string, 2) @test(eq, 2)
+Mod: mod(*5 | string, 2) @test(eq, 1)
+Quo: quo(*5 | string, 2) @test(eq, 2)
+Rem: rem(*5 | string, 2) @test(eq, 1)
+-- oracle/export.json --
+{
+    "Len": 3,
+    "Close": {},
+    "And": 1,
+    "Or": 1,
+    "Div": 2,
+    "Mod": 1,
+    "Quo": 2,
+    "Rem": 1
+}

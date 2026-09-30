@@ -1,0 +1,181 @@
+# Tests that hidden fields with disjunctions (close({y!: z?: _}) | _) work
+# correctly when exposed through embedding. The key behavior is that _a unifies
+# with close({y!: ...}) correctly even when exposed via {X} or X.
+# Issue: https://cuelang.org/issue/3834
+-- in.cue --
+// expose at top level
+X: {
+	_a: foo: true
+	_a: _ | close({y!: z?: _})
+	_b: _a & {y: {}}
+	concrete: _b.y
+	isTrue: concrete != _|_ @test(eq, true)
+}
+{X}
+
+@test(eq, {
+	X: {
+		_a: {foo: true}
+		_b: {y: {}, foo: true}
+		concrete: {}
+		isTrue: true
+	}
+	_a: {foo: true}
+	_b: {y: {}, foo: true}
+	concrete: {}
+	isTrue: true
+
+	sub: _ @test(ignore)
+	full: _ @test(ignore)
+})
+
+sub: t1: {
+	X: {
+		_a: foo: true
+		_a: _ | close({y!: z?: _})
+		_b: _a & {y: {}}
+		concrete: _b.y
+	}
+	{X}
+
+	@test(eq, {
+		X: {
+			_a: {foo: true}
+			_b: {y: {}, foo: true}
+			concrete: {}
+		}
+		_a: {foo: true}
+		_b: {y: {}, foo: true}
+		concrete: {}
+	})
+}
+sub: t2: {
+	X: {
+		_a: foo: true
+		_a: _ | close({y!: z?: _})
+		_b: _a & {y: {}}
+		concrete: _b.y @test(eq, {})
+	}
+	X
+
+	@test(eq, {
+		X: {
+			_a: {foo: true}
+			_b: {y: {}, foo: true}
+			concrete: {}
+		}
+		_a: {foo: true}
+		_b: {y: {}, foo: true}
+		concrete: {}
+	})
+}
+sub: t3: {
+	#X: {
+		_a: foo: true
+		_a: _ | close({y!: z?: _})
+		_b: _a & {y: {}}
+		concrete: _b.y @test(eq, {})
+	}
+	{#X}
+
+	@test(eq, {
+		#X: {
+			_a: {foo: true}
+			_b: {y: {}, foo: true}
+			concrete: {}
+		}
+		_a: {foo: true}
+		_b: {y: {}, foo: true}
+		concrete: {}
+	})
+}
+sub: t4: {
+	#X: {
+		_a: foo: true
+		_a: _ | close({y!: z?: _})
+		_b: _a & {y: {}}
+		concrete: _b.y @test(eq, {})
+		@test(debug, """
+			(#struct){
+			  _a: (#struct){
+			    foo: (bool){ true }
+			  }
+			  _b: (#struct){
+			    y: (#struct){
+			    }
+			    foo: (bool){ true }
+			  }
+			  concrete: (#struct){
+			  }
+			}
+			""")
+	}
+	#X
+
+	@test(eq, {
+		#X: {
+			_a: {foo: true}
+			_b: {y: {}, foo: true}
+			concrete: {}
+		}
+		_a: {foo: true}
+		_b: {y: {}, foo: true}
+		concrete: {}
+	})
+}
+
+full: {
+	#Foo: {
+		_data: Foo: true
+		_data: _ | close({Extra!: optional?: _})
+
+		_dataWithExtra: _data & {Extra: {}}
+
+		out: _dataWithExtra.Extra != _|_ @test(eq, true)
+	}
+
+	{#Foo}
+
+	@test(eq, {
+		#Foo: {
+			_data: {Foo: true}
+			_dataWithExtra: {Extra: {}, Foo: true}
+			out: true
+		}
+		_data: {Foo: true}
+		_dataWithExtra: {Extra: {}, Foo: true}
+		out: true
+	})
+}
+-- oracle/export.json --
+{
+    "concrete": {},
+    "isTrue": true,
+    "X": {
+        "concrete": {},
+        "isTrue": true
+    },
+    "sub": {
+        "t1": {
+            "X": {
+                "concrete": {}
+            },
+            "concrete": {}
+        },
+        "t2": {
+            "X": {
+                "concrete": {}
+            },
+            "concrete": {}
+        },
+        "t3": {
+            "concrete": {}
+        },
+        "t4": {
+            "concrete": {}
+        }
+    },
+    "full": {
+        "out": true
+    }
+}

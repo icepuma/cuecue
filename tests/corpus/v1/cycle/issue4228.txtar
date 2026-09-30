@@ -1,0 +1,98 @@
+# Test that cyclic error formatting doesn't cause stack overflow.
+# The combination of error() with self interpolation and complex nested
+# struct patterns can cause infinite recursion when formatting error messages.
+# https://cuelang.org/issue/4228
+-- in.cue --
+package main
+
+_objectBase: self={
+	name: string
+	k8s: metadata: name: self.name
+}
+
+_namespacedResource: self={
+	_objectBase
+	namespace: string
+	k8s: metadata: namespace: self.namespace
+}
+
+// Key validation pattern with error() and self
+_allValuesAreValidStructs: [_]: self={
+	*{} | error("<- invalid \(self)")
+}
+
+_setTypeMeta: self={
+	#apiVersion!: string
+	#kind!: string
+	#template: k8s: {
+		apiVersion: self.#apiVersion
+		kind: self.#kind
+	}
+}
+
+// Resource kinds pattern
+_resourceKindsBase: {
+	_base!: _
+
+	[string]: {
+		_allValuesAreValidStructs
+		_setTypeMeta
+		#resourceSchema: _
+		#template: {
+			_base
+			k8s: #resourceSchema
+		}
+		[_]: #template
+	}
+}
+
+_namespacedResourceKinds: {
+	_resourceKindsBase
+	_base: _namespacedResource
+	[string]: [string]: namespace: string
+
+	app: {
+		#apiVersion: "argoproj.io/v1alpha1"
+		#kind: "Application"
+		#resourceSchema: {
+			spec?: revisionHistoryLimit?: int
+		}
+
+		#template: self={
+			revisionHistoryLimit: *3 | int
+			k8s: spec: revisionHistoryLimit: self.revisionHistoryLimit
+		}
+	}
+}
+
+// Usage
+argocd: _namespacedResourceKinds & {
+	app: apps: {}
+} @test(err, code=eval)
+
+-- export.cue --
+@experiment(aliasv2)
+
+package main
+
+import "encoding/yaml"
+
+let _globalScope = self
+
+#export: {
+	#entries: [...]
+	manifests: [
+		for _entry in #entries
+		for _ns in _entry
+		for _kind, _objs in _ns
+		for _name, _obj in _objs {
+			_obj.k8s
+		}]
+	yamlStream: yaml.MarshalStream(manifests)
+}
+
+#manifests: {#export, #entries: [_globalScope]}.yamlStream
+
+@test(err, code=eval)
+-- oracle/skip --
+uses @experiment

@@ -1,0 +1,35 @@
+# Tests that a comprehension-generated struct merged into a list element
+# constrained by a closed definition correctly rejects fields not declared
+# in the definition. Fields introduced via comprehension inside a list
+# literal should still be subject to closedness checks.
+# Issue: https://cuelang.org/issue/153
+-- in.cue --
+Foo: {
+	listOfCloseds: [...#Closed]
+}
+
+#Closed: {
+	a: int | *0
+}
+
+Junk: {
+	b: 2 @test(eq, 2)
+}
+
+Foo & {
+	listOfCloseds: [{
+		for k, v in Junk {
+			"\(k)": v
+		}
+	}]
+}
+@test(eq, {
+	Foo: listOfCloseds: []
+	#Closed: a: int | *0
+	Junk: b: 2
+	listOfCloseds: _|_ @test(err, at=0.b, code=eval,
+		hint="considerably more positions could be useful",
+		contains="field not allowed", pos=[-4:4])
+})
+-- oracle/error --
+closed listOfCloseds.0.b

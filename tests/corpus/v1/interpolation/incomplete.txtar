@@ -1,0 +1,18 @@
+Issue #553
+-- in.cue --
+a: "foo" @test(eq, "foo")
+b: "boo" @test(eq, "boo")
+commands: {
+	#c: {
+		help: "help!"
+	}
+}
+out: """
+    a is \(a)
+    b is \(b)
+
+    c is \(commands.#c.help)
+    d is \(commands.#d.help)
+    """ @test(err, code=incomplete)
+-- oracle/error --
+reference out

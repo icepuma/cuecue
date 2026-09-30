@@ -1,0 +1,27 @@
+raw: true
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{
+	#emb: {
+		a: 1
+
+		sub: {
+			f: 3
+		}
+	}
+	#def: {
+		#emb
+
+		b: 2
+	}
+	#f: a: 10
+	#e: {
+		#f
+
+		b: int
+		{[_]: <100}
+		{[_]: <300}
+	}
+}
+-- oracle/export.json --
+{}

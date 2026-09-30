@@ -1,0 +1,7 @@
+raw: true
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{a: *"foo" | *"bar" | *string | int, b: a[2:3]}
+-- oracle/error --
+incomplete a
+incomplete b

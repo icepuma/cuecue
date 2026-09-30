@@ -1,0 +1,22 @@
+-- in.cue --
+s0: "foo" + "bar" @test(eq, "foobar")
+s1: 3 * "abc"     @test(eq, "abcabcabc")
+s2: "abc" * 2     @test(eq, "abcabc")
+
+b0: 'foo' + 'bar' @test(eq, 'foobar')
+b1: 3 * 'abc'     @test(eq, 'abcabcabc')
+b2: 'abc' * 2     @test(eq, 'abcabc')
+
+// TODO: consider the semantics of this and perhaps allow this.
+e0: "a" + ''  @test(err, code=eval)
+e1: 'b' + "c" @test(err, code=eval)
+
+// Absurdly large repeat counts are rejected rather than allocated; the
+// same limit bounds the strings.Repeat and list.Repeat builtins.
+e2: "a" * 200000000 @test(err, code=eval)
+e3: 'a' * 200000000 @test(err, code=eval)
+-- oracle/error --
+builtin e2
+builtin e3
+conflict e0
+conflict e1

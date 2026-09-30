@@ -1,0 +1,5 @@
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{a: [ 3 & 4]}
+-- oracle/error --
+conflict a.0

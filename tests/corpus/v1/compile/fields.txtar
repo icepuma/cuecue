@@ -1,0 +1,7 @@
+-- in.cue --
+#dev:   int   @test(eq, int)
+"#dev": int   @test(eq, int)
+_dev:   int   @test(eq, int)
+_#dev:  int   @test(eq, int)
+-- oracle/error --
+incomplete "#dev"

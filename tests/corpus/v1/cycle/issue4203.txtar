@@ -1,0 +1,55 @@
+# A CUE file using comprehensions and struct embeddings that exports
+# successfully in v0.13.2 fails with "undefined field" in later versions.
+# https://cuelang.org/issue/4203
+-- in.cue --
+import "strings"
+
+// Marking comprehension fields as optional for cycle detection
+// should not prevent fixed fields from being resolved.
+_listBuilder: {
+	kind: "kind1"
+	_deps: [...]
+	_kindJoin: {
+		_objs: [...]
+		_out: strings.Join([for d in _objs {d.kind}], ",")
+	}
+	_depKinds: {_kindJoin & {_objs: _deps}}._out
+	variable: "{" + _depKinds + "}"
+}
+
+output: _
+if true {
+	_input: [{
+		_listBuilder
+		_deps: [{_listBuilder}]
+	}]
+
+	output: _input[0].variable
+}
+@test(eq, {
+	_listBuilder: {
+		kind: "kind1"
+		_deps: []
+		_kindJoin: {_objs: [], _out: ""}
+		_depKinds: ""
+		variable: "{}"
+	}
+	output: "{kind1}"
+	_input: [{
+		_deps: [{
+			kind: "kind1"
+			_deps: []
+			_kindJoin: {_objs: [], _out: ""}
+			_depKinds: ""
+			variable: "{}"
+		}]
+		kind: "kind1"
+		_kindJoin: {_objs: [], _out: ""}
+		_depKinds: "kind1"
+		variable: "{kind1}"
+	}]
+})
+-- oracle/export.json --
+{
+    "output": "{kind1}"
+}

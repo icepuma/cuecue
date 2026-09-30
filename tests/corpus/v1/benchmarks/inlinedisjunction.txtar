@@ -1,0 +1,22 @@
+-- in.cue --
+#def: {
+    {} | {c: string}
+    {} | {c: string}
+    {} | {c: string}
+    {} | {c: string}
+    {} | {c: string}
+    {} | {c: string}
+    {} | {c: string}
+    {} | {c: string}
+    {} | {c: string}
+    {} | {a: string}
+}
+x: #def
+x: c: "foo"
+
+@test(eq, {
+	#def: {} | {a: string} | {c: string} | {c: string, a: string}
+	x: {c: "foo"} | {c: "foo", a: string}
+})
+-- oracle/error --
+incomplete x

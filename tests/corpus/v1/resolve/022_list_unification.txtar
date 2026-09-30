@@ -1,0 +1,6 @@
+-- in.cue --
+a: {l: ["foo", v], v: l[1]}   @test(eq, {l: ["foo", _], v: _})
+b: a & {l: [_, "bar"]}   @test(eq, {l: ["foo", "bar"], v: "bar"})
+-- oracle/error --
+incomplete a.l.1
+incomplete a.v

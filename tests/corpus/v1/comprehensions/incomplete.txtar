@@ -1,0 +1,13 @@
+-- in.cue --
+cond: bool
+src: {}
+top: _
+a: [ if cond {}]         @test(err, code=incomplete, pos=[-3:7], contains="incomplete bool")
+b: [for x in src.foo {}] @test(err, code=incomplete, pos=[0:18], contains="undefined field")
+c: {for x in top {}}     @test(err, code=incomplete, pos=[0:14], contains="cannot range")
+-- oracle/error --
+incomplete a
+incomplete c
+incomplete cond
+incomplete top
+reference b

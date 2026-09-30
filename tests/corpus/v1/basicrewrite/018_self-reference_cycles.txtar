@@ -1,0 +1,115 @@
+-- in.cue --
+a: b - 100 @test(err, code=cycle)
+b: a + 100 @test(err, code=cycle)
+
+c: [c[1], c[0]] @test(eq, [_, _])
+
+d: e - 1 @test(eq, 1)
+e: 1 + d
+e: *2 | 0 @test(eq, *2 | 0)
+-- disjunction.cue --
+oneway: {
+    t1: {
+        a: *1 | int
+        a: b + 1
+        b: <a
+        @test(eq, {
+			a: _|_ @test(err, code=cycle, contains="cycle with field: b", pos=[2:12])
+			b: _|_ @test(err, code=cycle, contains="cycle with field: b", pos=[2:12])
+		})
+    }
+    t2: t1 &{
+        a: 3
+    } @test(eq, {
+		a: _|_ @test(err, code=incomplete, contains="non-concrete value <3 in operand to +", pos=[-7:12, -6:12])
+		b: <3
+	})
+}
+// This should report a cycle error. TODO: this should also resolve.
+issue3669: {
+	#Schema: {
+		two: 1 + one
+		one: two - 1
+	}
+
+	out: #Schema & {
+		two: 0 | *2
+	}
+	@test(eq, {
+		#Schema: {
+			two: _|_ @test(err, code=cycle, contains="issue3669.#Schema.one: cycle with field: two (and 1 more errors)", pos=[3:8])
+			one: _|_ @test(err, code=cycle, contains="issue3669.#Schema.one: cycle with field: two (and 1 more errors)", pos=[3:8])
+		}
+		out: {
+			two: _|_
+			one: _|_ @test(err, code=cycle, contains="cycle with field: one", pos=[2:12])
+		}
+	})
+}
+-- issue3737.cue --
+// Apparent cycle issue in evalv3 when combining a definition with a default
+// disjunction and a derived field value.
+// https://cuelang.org/issue/3737
+issue3737: reduced1: {
+    #A: {
+        a: b * 12
+        b: a / 12
+    }
+
+    x: #A
+    x: b: 1000.0
+
+    y: #A | *x
+    y: b: x.b * 0.7
+    @test(eq, {
+			#A: {
+				a: _|_ @test(err, code=cycle,
+					contains="reduced1.#A.b: cycle with field: a (and 1 more errors)", pos=[3:12])
+				b: _|_ @test(err, code=cycle,
+					contains="reduced1.#A.b: cycle with field: a (and 1 more errors)", pos=[3:12])
+		}
+		x: {b: 1000.0, a: 12000.0}
+		y: {b: 700.00, a: 8400.00}
+	})
+}
+issue3737: reduced2: {
+    x: #TimeSpan & {
+        start: y.start
+        end: 1000.0
+    }
+    y: #TimeSpan & {
+        duration: 100.0
+        end: x.end
+    }
+    #TimeSpan: {
+        start:    end - duration
+        duration: end - start
+        end:      start + duration
+    }
+    @test(eq, {
+		x: {
+			start: 900.0
+			end: 1000.0
+			duration: 100.0
+		}
+		y: {
+			duration: 100.0
+			end: 1000.0
+			start: 900.0
+		}
+		#TimeSpan: {
+			start: _|_ @test(err, code=cycle,
+				contains="reduced2.#TimeSpan.end: cycle with field: start (and 2 more errors)", pos=[12:19])
+			duration: _|_ @test(err, code=cycle,
+				contains="reduced2.#TimeSpan.start: cycle with field: end (and 2 more errors)", pos=[10:19])
+			end: _|_ @test(err, code=cycle, 
+				contains="reduced2.#TimeSpan.start: cycle with field: end (and 2 more errors)", pos=[10:19])
+		}
+	})
+}
+-- oracle/error --
+conflict oneway.t2.a
+incomplete c.0
+incomplete c.1
+incomplete oneway.t2.a
+incomplete oneway.t2.b

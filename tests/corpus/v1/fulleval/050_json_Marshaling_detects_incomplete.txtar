@@ -1,0 +1,16 @@
+#name: json Marshaling detects incomplete
+#evalFull
+-- in.cue --
+import "encoding/json"
+
+a: json.Marshal({a: string}) @test(err, code=incomplete)
+
+foo: {
+	a: 3     @test(eq, 3)
+	b: foo.c @test(err, code=incomplete)
+}
+b: json.Marshal(foo) @test(err, code=incomplete)
+-- oracle/error --
+incomplete a
+reference b
+reference foo.b

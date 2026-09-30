@@ -1,0 +1,13 @@
+-- in.cue --
+import "list"
+
+a: list.Sort([2, 3, 1, 4], {x: _, y: _, less: x < y}) @test(eq, [1, 2, 3, 4])
+-- oracle/export.json --
+{
+    "a": [
+        1,
+        2,
+        3,
+        4
+    ]
+}

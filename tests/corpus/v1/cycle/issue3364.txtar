@@ -1,0 +1,12 @@
+# Structural recursion that used to loop forever now reports a structural cycle.
+# https://cuelang.org/issue/3364
+-- in.cue --
+out: _t3.out @test(err, code=structural_cycle, path=_t3.out.a.a, contains="structural cycle", pos=[])
+_t3: {
+	repeater: L={L.a}
+	data: M={a: a: M}
+	out: repeater & data
+}
+-- oracle/error --
+cycle _t3.data.a.a
+cycle _t3.out.a.a

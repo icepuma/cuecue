@@ -1,0 +1,57 @@
+-- in.cue --
+a1: """
+		before
+		\(4)
+		after
+		""" @test(eq, "before\n4\nafter")
+a2: """
+		before
+		\(4)
+
+		""" @test(eq, "before\n4\n")
+a3: """
+
+		\(4)
+		after
+		""" @test(eq, "\n4\nafter")
+a4: """
+
+		\(4)
+
+		""" @test(eq, "\n4\n")
+m1: """
+		before
+		\(
+	4)
+		after
+		""" @test(eq, "before\n4\nafter")
+m2: """
+		before
+		\(
+	4)
+
+		""" @test(eq, "before\n4\n")
+m3: """
+
+		\(
+
+	4)
+		after
+		""" @test(eq, "\n4\nafter")
+m4: """
+
+		\(
+	4)
+
+		""" @test(eq, "\n4\n")
+-- oracle/export.json --
+{
+    "a1": "before\n4\nafter",
+    "a2": "before\n4\n",
+    "a3": "\n4\nafter",
+    "a4": "\n4\n",
+    "m1": "before\n4\nafter",
+    "m2": "before\n4\n",
+    "m3": "\n4\nafter",
+    "m4": "\n4\n"
+}

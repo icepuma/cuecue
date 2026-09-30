@@ -1,0 +1,48 @@
+# A `let` binding that factors out a repeated expression changes the evaluation
+# result unexpectedly compared to the inline form, indicating a bug in how
+# `let`-bound values are resolved relative to their enclosing scope.
+# https://cuelang.org/issue/4244
+-- in.cue --
+import "strings"
+
+#schema: {
+	let splits = strings.Split(id, "_never_")
+	let prefix = splits[0]
+
+	#ID:    =~"^\(prefix)$" @test(err, code=incomplete, contains="invalid interpolation", pos=[0:12, -2:22])
+	#SubID: =~"^\(prefix):sub$" @test(err, code=incomplete, contains="invalid interpolation", pos=[0:12, -3:22])
+
+	id:    #ID @test(err, code=incomplete, contains="invalid interpolation", pos=[-3:12, -5:22])
+	subid: #SubID @test(err, code=incomplete, contains="invalid interpolation", pos=[-3:12, -6:22])
+}
+
+case1: #schema & {
+	id:    "foo"
+	subid: "foo:sub"
+} @test(eq, {
+	id: "foo"
+	subid: "foo:sub"
+	#ID: =~"^foo$"
+	#SubID: =~"^foo:sub$"
+})
+
+case2: #schema & {
+	subid: "foo:sub"
+	id:    "foo"
+} @test(eq, {
+	subid: "foo:sub"
+	id: "foo"
+	#ID: =~"^foo$"
+	#SubID: =~"^foo:sub$"
+})
+-- oracle/export.json --
+{
+    "case1": {
+        "id": "foo",
+        "subid": "foo:sub"
+    },
+    "case2": {
+        "id": "foo",
+        "subid": "foo:sub"
+    }
+}

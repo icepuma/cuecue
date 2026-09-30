@@ -1,0 +1,14 @@
+-- in.cue --
+a: _
+b: a @test(eq, {d: 1}) @test(shareID=ba)
+a: {d: 1, d: _} @test(eq, {d: 1}) @test(shareID=ba)
+b: _
+-- oracle/export.json --
+{
+    "a": {
+        "d": 1
+    },
+    "b": {
+        "d": 1
+    }
+}

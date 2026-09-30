@@ -1,0 +1,36 @@
+#inlinetest:exclude CUE source contains compile-time errors (try-clause syntax, missing
+# references) which prevent the inline runner from compiling the source.
+-- in.cue --
+@experiment(try)
+
+// Struct-form try must be the last clause
+structFormNotLast: {
+    try if true { x: 1 }
+}
+
+// ? marker outside try context
+optionalOutsideTry: {
+    a: 1
+    b: a?
+}
+
+// ? marker in for clause source (outside try)
+optionalInForSource: {
+    a?: [1, 2, 3]
+    for x in a? { "\(x)": x }
+}
+
+// ? marker in body of assignment-form try
+optionalInAssignmentBody: {
+    a: 1
+    b: 2
+    try y = a? { x: b? } else { fallback: 23 }
+}
+
+// Struct-form try must be the last clause
+invalidUseOfOptional: {
+    try { x: c? }
+}
+
+-- oracle/skip --
+uses @experiment

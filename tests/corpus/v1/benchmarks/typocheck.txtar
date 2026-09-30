@@ -1,0 +1,130 @@
+// Issue #3881
+-- in.cue --
+import "list"
+
+out: #Output & {#input: _input}
+
+_input: {
+	for n in list.Range(1, 100, 1) {
+		"A\(n)": "B\(n)": name: "name\(n)"
+	}
+}
+#Embed: [string]: string
+#Output: {
+	#Embed
+	#input: _
+
+	for _, lvlA in #input {
+		for nameB, lvlB in lvlA {
+			(nameB): lvlB.name
+		}
+	}
+}
+
+_checkB1:  out.B1  @test(eq, "name1")
+_checkB50: out.B50 @test(eq, "name50")
+_checkB99: out.B99 @test(eq, "name99")
+-- oracle/export.json --
+{
+    "out": {
+        "B1": "name1",
+        "B10": "name10",
+        "B11": "name11",
+        "B12": "name12",
+        "B13": "name13",
+        "B14": "name14",
+        "B15": "name15",
+        "B16": "name16",
+        "B17": "name17",
+        "B18": "name18",
+        "B19": "name19",
+        "B2": "name2",
+        "B20": "name20",
+        "B21": "name21",
+        "B22": "name22",
+        "B23": "name23",
+        "B24": "name24",
+        "B25": "name25",
+        "B26": "name26",
+        "B27": "name27",
+        "B28": "name28",
+        "B29": "name29",
+        "B3": "name3",
+        "B30": "name30",
+        "B31": "name31",
+        "B32": "name32",
+        "B33": "name33",
+        "B34": "name34",
+        "B35": "name35",
+        "B36": "name36",
+        "B37": "name37",
+        "B38": "name38",
+        "B39": "name39",
+        "B4": "name4",
+        "B40": "name40",
+        "B41": "name41",
+        "B42": "name42",
+        "B43": "name43",
+        "B44": "name44",
+        "B45": "name45",
+        "B46": "name46",
+        "B47": "name47",
+        "B48": "name48",
+        "B49": "name49",
+        "B5": "name5",
+        "B50": "name50",
+        "B51": "name51",
+        "B52": "name52",
+        "B53": "name53",
+        "B54": "name54",
+        "B55": "name55",
+        "B56": "name56",
+        "B57": "name57",
+        "B58": "name58",
+        "B59": "name59",
+        "B6": "name6",
+        "B60": "name60",
+        "B61": "name61",
+        "B62": "name62",
+        "B63": "name63",
+        "B64": "name64",
+        "B65": "name65",
+        "B66": "name66",
+        "B67": "name67",
+        "B68": "name68",
+        "B69": "name69",
+        "B7": "name7",
+        "B70": "name70",
+        "B71": "name71",
+        "B72": "name72",
+        "B73": "name73",
+        "B74": "name74",
+        "B75": "name75",
+        "B76": "name76",
+        "B77": "name77",
+        "B78": "name78",
+        "B79": "name79",
+        "B8": "name8",
+        "B80": "name80",
+        "B81": "name81",
+        "B82": "name82",
+        "B83": "name83",
+        "B84": "name84",
+        "B85": "name85",
+        "B86": "name86",
+        "B87": "name87",
+        "B88": "name88",
+        "B89": "name89",
+        "B9": "name9",
+        "B90": "name90",
+        "B91": "name91",
+        "B92": "name92",
+        "B93": "name93",
+        "B94": "name94",
+        "B95": "name95",
+        "B96": "name96",
+        "B97": "name97",
+        "B98": "name98",
+        "B99": "name99"
+    }
+}

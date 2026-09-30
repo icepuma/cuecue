@@ -1,0 +1,14 @@
+-- in.cue --
+t: {
+	#ok: *true | bool
+	if #ok {
+		x: int
+	}
+	@test(eq, {
+		#ok: *true | bool
+		x:   int
+	})
+}
+s: t & {#ok: false} @test(eq, {#ok: false})
+-- oracle/error --
+incomplete t.x

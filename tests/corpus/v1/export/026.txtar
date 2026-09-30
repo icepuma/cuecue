@@ -1,0 +1,10 @@
+raw: true
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{
+	if false {
+		{a: 1} | {b: 1}
+	}
+}
+-- oracle/export.json --
+{}

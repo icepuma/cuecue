@@ -351,15 +351,15 @@ Every diagnostic has:
 
 | Kind | Meaning | v1 oracle messages (`scripts/oracle.sh` holds the authoritative mapping) |
 |---|---|---|
-| `syntax` | the file doesn't parse, or breaks a static rule: an unused `let`, an edition or package rule | `expected …`, `missing …`, `illegal …`, `… not terminated`, `found packages …`, `unreferenced alias or let clause` |
-| `reference` | unknown identifier, field, list index, import or package; duplicate declaration | `reference "…" not found`, `undefined field`, `index out of range`, `import failed`, `cannot find package` |
-| `conflict` | values don't unify: mismatched values, types, bounds, validators, operands or list lengths | `conflicting values`, `invalid value`, `invalid operands`, `incompatible list lengths`, `empty disjunction`, `mismatched types` |
+| `syntax` | the file doesn't parse, or breaks a static rule: an unused `let`, `_` as a label, an edition or package rule | `expected …`, `missing …`, `illegal …`, `… not terminated`, `found packages …`, `unreferenced alias or let clause`, `cannot use _ as …` |
+| `reference` | unknown identifier, field, import, package or builtin; a list index out of range; duplicate declaration | `reference "…" not found`, `undefined …`, `… out of range`, `must be non-negative`, `import failed` |
+| `conflict` | values don't unify: mismatched values, types, bounds, validators, operands or list lengths; explicit `_\|_` | `conflicting values`, `invalid value`, `invalid operand`, `incompatible …`, `empty disjunction`, `cannot use … (type …)`, `explicit error` |
 | `closed` | a closed struct doesn't allow the field | `field not allowed` |
-| `required` | a required field is missing | `field is required but not present` |
-| `incomplete` | a value isn't concrete where it must be, or refers to an unset optional field. Reference cycles such as `a: b, b: a` land here too | `incomplete value`, `non-concrete value`, `cannot reference optional field` |
-| `cycle` | a structural cycle | `structural cycle` |
-| `builtin` | a builtin or an arithmetic operation failed for a reason other than a conflict | `error in call to`, `failed arithmetic` |
-| `call` | 2027: wrong arity, or calling something that isn't a function | — |
+| `required` | a required field is missing | `field is required but not present`, `required field missing` |
+| `incomplete` | a value isn't concrete where it must be, or refers to an unset optional field. Reference cycles such as `a: b, b: a` land here too | `incomplete …`, `non-concrete …`, `… requires concrete value`, `unresolved disjunction`, `cannot reference optional field` |
+| `cycle` | a structural cycle, or a field set changed after it was referenced | `structural cycle`, `cyclic reference`, `circular dependency`, `field set was already referenced` |
+| `builtin` | a builtin or an arithmetic operation failed for a reason other than a conflict | `error in call to`, `failed arithmetic`, `invalid regexp`, `exceeds limit` |
+| `call` | wrong arity, or calling something that isn't a function | `cannot call …` |
 | `recursion` | 2027: a function reaches itself through calls | — |
 | `unknown-tag` | 2027: a union tag names no arm | — |
 | `input` | 2027: an undeclared input was supplied | — |

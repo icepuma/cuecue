@@ -1,0 +1,20 @@
+#name: recursive evaluation within list
+#evalFull
+-- in.cue --
+l: [a]          @test(eq, [{c: "t", d: "t"}]) @test(shareID=L, at=0)
+a: b & {c: "t"} @test(eq, {c: "t", d: "t"})  @test(shareID=L)
+b: {
+	d: c
+	c: string
+} @test(eq, {d: string, c: string})
+l1: [a1] @test(eq, [{c: "t", d: "st"}]) @test(shareID=L1, at=0)
+a1: b1 & {c: "t"} @test(eq, {c: "t", d: "st"}) @test(shareID=L1)
+b1: {
+	d: "s" + c @test(err, code=incomplete)
+	c: string
+}
+-- oracle/error --
+incomplete b.c
+incomplete b.d
+incomplete b1.c
+incomplete b1.d

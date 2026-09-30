@@ -1,0 +1,11 @@
+#inlinetest:exclude skip — tests export format, not evaluator semantics
+-- in.cue --
+{
+	$type:  3
+	"_":    int
+	"_foo": int
+	_bar:   int
+}
+-- oracle/error --
+incomplete "_"
+incomplete "_foo"

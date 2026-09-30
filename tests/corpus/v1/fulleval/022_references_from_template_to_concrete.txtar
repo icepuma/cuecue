@@ -1,0 +1,34 @@
+-- in.cue --
+// res is a list containing t; res[0] shares t's vertex.
+res: [t] @test(eq, [{x: {a: "XDDDD", b: str: "DDDD", c: "X"}}]) @test(shareID=T, at=0)
+t: {
+	[X=string]: {
+		a: c + b.str
+		b: str: string
+		c: "X"
+	}
+	x: {b: str: "DDDD"} @test(eq, {a: "XDDDD", b: str: "DDDD", c: "X"})
+} @test(shareID=T)
+-- oracle/export.json --
+{
+    "res": [
+        {
+            "x": {
+                "a": "XDDDD",
+                "b": {
+                    "str": "DDDD"
+                },
+                "c": "X"
+            }
+        }
+    ],
+    "t": {
+        "x": {
+            "a": "XDDDD",
+            "b": {
+                "str": "DDDD"
+            },
+            "c": "X"
+        }
+    }
+}

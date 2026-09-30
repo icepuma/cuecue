@@ -1,0 +1,22 @@
+-- in.cue --
+#Foo: {
+	a: 1
+	b: int
+} @test(eq, {a: 1, b: int}) @test(closed)
+"#Foo": #Foo & {b: 1} @test(eq, {b: 1, a: 1}) @test(closed)
+
+bulk: {[string]: string} & {
+	#def: 4 // Different namespace, so bulk option does not apply.
+	_hid: 3
+	a:    "foo"
+} @test(eq, {#def: 4, _hid: 3, a: "foo"})
+-- oracle/export.json --
+{
+    "#Foo": {
+        "a": 1,
+        "b": 1
+    },
+    "bulk": {
+        "a": "foo"
+    }
+}

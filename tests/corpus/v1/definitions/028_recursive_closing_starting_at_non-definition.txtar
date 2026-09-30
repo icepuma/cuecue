@@ -1,0 +1,20 @@
+
+#name: recursive closing starting at non-definition
+#evalPartial
+-- in.cue --
+z: a: {
+	#B: {
+		c: d: 1
+		c: f: 1
+	}
+}
+A: z & {a: {#B: {c: e: 2}}} @test(eq, {a: #B: c: {e: 2, d: 1, f: 1}})
+-- oracle/export.json --
+{
+    "z": {
+        "a": {}
+    },
+    "A": {
+        "a": {}
+    }
+}

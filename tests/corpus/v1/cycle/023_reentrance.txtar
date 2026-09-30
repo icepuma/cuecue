@@ -1,0 +1,29 @@
+#name: reentrance
+#evalFull
+-- in.cue --
+// This indirection is needed to avoid binding references to fib
+// within fib to the instantiated version.
+fibRec: {
+	nn:  int
+	out: (fib & {n: nn}).out
+	@test(err, code=incomplete, at=out)
+}
+fib: {
+	n: int
+
+	if n >= 2 {
+		out: (fibRec & {nn: n - 2}).out + (fibRec & {nn: n - 1}).out
+	}
+	if n < 2 {
+		out: n
+	}
+	@test(err, code=incomplete)
+}
+fib1:  (fib & {n: 1}).out  @test(eq, 1) // MAY NOT be an error
+fib2:  (fib & {n: 2}).out  @test(eq, 1) // MAY be an error
+fib3:  (fib & {n: 3}).out  @test(err, code=structural_cycle) // SHOULD be an error
+fib7:  (fib & {n: 7}).out  @test(err, code=structural_cycle) // Error
+fib12: (fib & {n: 12}).out @test(err, code=structural_cycle) // Error
+
+-- oracle/error --
+cycle -

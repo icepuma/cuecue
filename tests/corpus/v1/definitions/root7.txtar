@@ -1,0 +1,11 @@
+-- in.cue --
+root: input: #deps: root: {}
+{root.input.#deps}
+
+@test(eq, { root: input: #deps: root: {} })
+-- oracle/export.json --
+{
+    "root": {
+        "input": {}
+    }
+}

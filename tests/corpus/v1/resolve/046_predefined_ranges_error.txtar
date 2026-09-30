@@ -1,0 +1,5 @@
+-- in.cue --
+e1: int16
+e1: 100_000   @test(err, code=eval, contains="invalid value 100000", pos=[0:5])
+-- oracle/error --
+conflict e1

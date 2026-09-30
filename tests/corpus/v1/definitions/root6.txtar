@@ -1,0 +1,26 @@
+-- in.cue --
+c: "foo"
+a: b: int
+#Schema
+#Schema: close({ a: b: int}) @test(closed)
+
+x: {
+	c: "foo"
+	a: b: int
+	#Schema
+	#Schema: close({ a: b: int})
+} @test(closed)
+
+@test(eq, {
+	a: b: int
+	c: "foo"
+	#Schema: { a: b: int }
+	x: {
+		a: b: int
+		c: "foo"
+		#Schema: a: b: int
+	}
+})
+-- oracle/error --
+incomplete a.b
+incomplete x.a.b

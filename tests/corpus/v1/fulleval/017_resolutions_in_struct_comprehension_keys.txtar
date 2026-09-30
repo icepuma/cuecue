@@ -1,0 +1,8 @@
+-- in.cue --
+a: {for _, b in ["c"] {"\(b+".")": "a"}} @test(eq, {"c.": "a"})
+-- oracle/export.json --
+{
+    "a": {
+        "c.": "a"
+    }
+}

@@ -1,0 +1,15 @@
+-- in.cue --
+
+x: 1
+y: {
+	"x": 2
+	z:   x @test(eq, 1)
+}
+-- oracle/export.json --
+{
+    "x": 1,
+    "y": {
+        "x": 2,
+        "z": 1
+    }
+}
