@@ -349,16 +349,16 @@ Every diagnostic has:
 - **notes** for provenance steps: the definition, pattern, comprehension condition, default or input that brought a conjunct in.
 - optional **help**, including suggested edits, such as the closest allowed field for a `closed` error.
 
-| Kind | Meaning | v1 oracle messages (starting patterns; M0.3 confirms) |
+| Kind | Meaning | v1 oracle messages (`scripts/oracle.sh` holds the authoritative mapping) |
 |---|---|---|
-| `syntax` | the file doesn't parse, or breaks an edition or package rule | `expected`, `illegal`, `missing` |
-| `reference` | unknown identifier, field, import or package; duplicate declaration | `reference "…" not found`, `undefined field` |
-| `conflict` | values don't unify: mismatched values, types, bounds or validators | `conflicting values`, `invalid value`, `mismatched types` |
+| `syntax` | the file doesn't parse, or breaks a static rule: an unused `let`, an edition or package rule | `expected …`, `missing …`, `illegal …`, `… not terminated`, `found packages …`, `unreferenced alias or let clause` |
+| `reference` | unknown identifier, field, list index, import or package; duplicate declaration | `reference "…" not found`, `undefined field`, `index out of range`, `import failed`, `cannot find package` |
+| `conflict` | values don't unify: mismatched values, types, bounds, validators, operands or list lengths | `conflicting values`, `invalid value`, `invalid operands`, `incompatible list lengths`, `empty disjunction`, `mismatched types` |
 | `closed` | a closed struct doesn't allow the field | `field not allowed` |
 | `required` | a required field is missing | `field is required but not present` |
-| `incomplete` | a value isn't concrete where it must be | `incomplete value`, `non-concrete value` |
-| `cycle` | a structural cycle, or references that can't be resolved | `structural cycle` |
-| `builtin` | a builtin failed for a reason other than validation | `error in call to` |
+| `incomplete` | a value isn't concrete where it must be, or refers to an unset optional field. Reference cycles such as `a: b, b: a` land here too | `incomplete value`, `non-concrete value`, `cannot reference optional field` |
+| `cycle` | a structural cycle | `structural cycle` |
+| `builtin` | a builtin or an arithmetic operation failed for a reason other than a conflict | `error in call to`, `failed arithmetic` |
 | `call` | 2027: wrong arity, or calling something that isn't a function | — |
 | `recursion` | 2027: a function reaches itself through calls | — |
 | `unknown-tag` | 2027: a union tag names no arm | — |
