@@ -1,0 +1,22 @@
+[package]
+name = "cuecue-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+cuecue-syntax = { path = "../crates/cuecue-syntax" }
+
+# Kept out of the main workspace: fuzzing needs nightly.
+[workspace]
+
+[[bin]]
+name = "lex"
+path = "fuzz_targets/lex.rs"
+test = false
+doc = false
+bench = false

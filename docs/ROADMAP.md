@@ -23,7 +23,8 @@ Depends on: nothing.
 
 Depends on: M0.
 
-- [ ] **M1.1 Lexer.** Every token in the CUE spec's "Lexical elements": identifiers and keywords, number literals with multipliers (`1Ki`), string and bytes literals (single-line, multi-line, `#`-delimited, with interpolation), attributes, comments, and automatic comma insertion. *Done when* every corpus `.cue` file lexes without error tokens (except cases whose oracle result is `syntax`), each example in that spec section is a unit test, and the `lex` fuzz target runs 5 minutes clean.
+- [x] **M1.1 Lexer.** Every token in the CUE spec's "Lexical elements": identifiers and keywords, number literals with multipliers (`1Ki`), string and bytes literals (single-line, multi-line, `#`-delimited, with interpolation), attributes, comments, and automatic comma insertion. *Done when* every corpus `.cue` file lexes without error tokens (except cases whose oracle result is `syntax`), each example in that spec section is a unit test, and the `lex` fuzz target runs 5 minutes clean.
+  - Fuzz with `cd fuzz && cargo +nightly fuzz run lex -- -max_total_time=300` (needs `cargo install cargo-fuzz`); seed `fuzz/corpus/lex` from the corpus `.cue` sections. Like CUE's scanner, a bare `#` or `_#` is an identifier.
 - [ ] **M1.2 Parser.** Hand-written recursive descent that builds a `rowan` tree and recovers from errors. *Done when* every corpus file parses without diagnostics (except the oracle's `syntax` cases, which get at least one `syntax` diagnostic), `cuecue parse --tree <file>` prints the tree, and the `parse` fuzz target runs 5 minutes clean.
 - [ ] **M1.3 Typed AST.** Typed accessors for every production of the CUE spec grammar. *Done when* printing the tree of any corpus file reproduces the file byte for byte.
 
