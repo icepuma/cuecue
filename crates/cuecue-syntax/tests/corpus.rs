@@ -35,8 +35,16 @@ fn sections(text: &str) -> Vec<(&str, String)> {
     out
 }
 
-/// (archive path, oracle reports a syntax error, .cue files) for every archive not skipped.
-fn cases() -> Vec<(String, bool, Vec<(String, String)>)> {
+struct Case {
+    archive: String,
+    /// The oracle reports a syntax error for this archive.
+    syntax_error: bool,
+    /// (name, source) of its `.cue` files.
+    files: Vec<(String, String)>,
+}
+
+/// Every archive the oracle didn't skip.
+fn cases() -> Vec<Case> {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/corpus/v1");
     let mut paths = Vec::new();
     archives(&dir, &mut paths);
@@ -57,8 +65,12 @@ fn cases() -> Vec<(String, bool, Vec<(String, String)>)> {
             .filter(|(n, _)| n.ends_with(".cue"))
             .map(|(n, body)| (n.to_owned(), body))
             .collect();
-        let name = path.strip_prefix(&dir).unwrap().display().to_string();
-        out.push((name, syntax_error, files));
+        let archive = path.strip_prefix(&dir).unwrap().display().to_string();
+        out.push(Case {
+            archive,
+            syntax_error,
+            files,
+        });
     }
     out
 }
@@ -66,7 +78,12 @@ fn cases() -> Vec<(String, bool, Vec<(String, String)>)> {
 #[test]
 fn corpus_parses() {
     let mut failures = Vec::new();
-    for (archive, syntax_error, files) in cases() {
+    for Case {
+        archive,
+        syntax_error,
+        files,
+    } in cases()
+    {
         for (name, src) in &files {
             let parse = cuecue_syntax::parse(src);
             assert_eq!(
